@@ -28,14 +28,14 @@ mod DailyLottery {
         strk_token: ContractAddress,
         current_round_id: u64,
         rounds: Map<u64, Round>,
-        user_tickets: Map<(ContractAddress, u64), u8>, // User's guess for each round
-        user_is_winner: Map<(ContractAddress, u64), bool>, // Whether user won in each round
-        user_rewards: Map<(ContractAddress, u64), u256>, // Rewards per user per round
-        claimed_rewards: Map<(ContractAddress, u64), bool>,
-        total_tickets: Map<u64, u64>, // Total tickets in each round
-        correct_guesses: Map<(u64, u8), u64>, // Count of each guess in each round
-        round_participants: Map<(u64, u64), ContractAddress>, // (round_id, index) -> address
-        participant_indices: Map<(ContractAddress, u64), u64>, // (address, round_id) -> index
+        user_tickets: Map<(u64, ContractAddress), u8>, // (round_id, user) -> guess
+        user_is_winner: Map<(u64, ContractAddress), bool>, // (round_id, user) -> is_winner
+        user_rewards: Map<(u64, ContractAddress), u256>, // (round_id, user) -> reward
+        claimed_rewards: Map<(u64, ContractAddress), bool>, // (round_id, user) -> claimed
+        total_tickets: Map<u64, u64>, // round_id -> total_tickets
+        correct_guesses: Map<(u64, u8), u64>, // (round_id, guess) -> count
+        participants: Map<(u64, u64), ContractAddress>, // (round_id, index) -> address
+        participant_indices: Map<(u64, ContractAddress), u64>, // (round_id, address) -> index
     }
 
     #[derive(Drop, Serde, starknet::Store)]
@@ -124,7 +124,7 @@ mod DailyLottery {
             let mut current_round = self.rounds.read(current_round_id);
             
             // Check if user already has ticket for this round
-            let existing_guess = self.user_tickets.read((caller, current_round_id));
+            let existing_guess = self.user_tickets.read((current_round_id, caller));
             assert(existing_guess == 0, 'Already bought ticket');
             
             // Check if current round has expired and handle drawing
@@ -140,13 +140,12 @@ mod DailyLottery {
             
             // Record ticket and participant
             let ticket_index = self.total_tickets.read(current_round_id);
-            self.user_tickets.write((caller, current_round_id), guess);
-            self.round_participants.write((current_round_id, ticket_index), caller);
-            self.participant_indices.write((caller, current_round_id), ticket_index);
+            self.user_tickets.write((current_round_id, caller), guess);
+            self.participants.write((current_round_id, ticket_index), caller);
+            self.participant_indices.write((current_round_id, caller), ticket_index);
             
             // Update round info
             current_round.prize_pool += TICKET_COST;
-            self.rounds.write(current_round_id, current_round);
             
             // Update ticket counts
             let total_tickets = self.total_tickets.read(current_round_id) + 1;
@@ -155,6 +154,8 @@ mod DailyLottery {
             // Update guess counts
             let guess_count = self.correct_guesses.read((current_round_id, guess)) + 1;
             self.correct_guesses.write((current_round_id, guess), guess_count);
+            
+            self.rounds.write(current_round_id, current_round);
             
             self.emit(TicketBought {
                 user: caller,
@@ -168,20 +169,20 @@ mod DailyLottery {
             let caller = get_caller_address();
             
             // Check if reward already claimed
-            assert(!self.claimed_rewards.read((caller, round_id)), 'Reward already claimed');
+            assert(!self.claimed_rewards.read((round_id, caller)), 'Reward already claimed');
             
             // Check if round has been drawn
             let round = self.rounds.read(round_id);
             assert(round.is_drawn, 'Round not drawn yet');
             
             // Check if user is winner
-            assert(self.user_is_winner.read((caller, round_id)), 'Not a winner');
+            assert(self.user_is_winner.read((round_id, caller)), 'Not a winner');
             
-            let reward = self.user_rewards.read((caller, round_id));
+            let reward = self.user_rewards.read((round_id, caller));
             assert(reward > 0, 'No reward to claim');
             
             // Mark as claimed
-            self.claimed_rewards.write((caller, round_id), true);
+            self.claimed_rewards.write((round_id, caller), true);
             
             // Transfer reward
             let strk_dispatcher = IERC20Dispatcher { contract_address: self.strk_token.read() };
@@ -203,13 +204,13 @@ mod DailyLottery {
         }
 
         fn get_user_tickets(self: @ContractState, user: ContractAddress, round_id: u64) -> (u8, bool) {
-            let guess = self.user_tickets.read((user, round_id));
-            let is_winner = self.user_is_winner.read((user, round_id));
+            let guess = self.user_tickets.read((round_id, user));
+            let is_winner = self.user_is_winner.read((round_id, user));
             (guess, is_winner)
         }
 
         fn get_user_reward(self: @ContractState, user: ContractAddress, round_id: u64) -> u256 {
-            self.user_rewards.read((user, round_id))
+            self.user_rewards.read((round_id, user))
         }
 
         fn get_round_winning_number(self: @ContractState, round_id: u64) -> u8 {
@@ -270,7 +271,6 @@ mod DailyLottery {
             round.winning_number = winning_number;
             round.is_drawn = true;
             let prize_pool = round.prize_pool;
-            self.rounds.write(round_id, round);
             
             // Count winners
             let winner_count = self.correct_guesses.read((round_id, winning_number));
@@ -278,6 +278,7 @@ mod DailyLottery {
             if winner_count == 0 {
                 // No winners, prize rolls to next round
                 let reward_per_winner = 0;
+                self.rounds.write(round_id, round);
                 self.emit(WinnerDrawn {
                     round_id,
                     winning_number,
@@ -293,22 +294,23 @@ mod DailyLottery {
             let reward_per_winner = prize_pool / winner_count.into();
             
             // Identify and reward winners
-            let total_tickets = self.total_tickets.read(round_id);
             let mut i = 0;
             let mut actual_winners = 0;
             
             while i < total_tickets {
-                let participant = self.round_participants.read((round_id, i));
-                let guess = self.user_tickets.read((participant, round_id));
+                let participant = self.participants.read((round_id, i));
+                let guess = self.user_tickets.read((round_id, participant));
                 
                 if guess == winning_number {
-                    self.user_is_winner.write((participant, round_id), true);
-                    self.user_rewards.write((participant, round_id), reward_per_winner);
+                    self.user_is_winner.write((round_id, participant), true);
+                    self.user_rewards.write((round_id, participant), reward_per_winner);
                     actual_winners += 1;
                 }
                 
                 i += 1;
             }
+            
+            self.rounds.write(round_id, round);
             
             self.emit(WinnerDrawn {
                 round_id,
