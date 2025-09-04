@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
+import { TransactionStatus } from '../components/lottery/TransactionStatus'
 
 export function RootLayout() {
   return (
@@ -8,6 +9,7 @@ export function RootLayout() {
       <main className="container mx-auto px-4 py-8">
         <Outlet />
       </main>
+      <TransactionStatus />
     </div>
   )
 }
