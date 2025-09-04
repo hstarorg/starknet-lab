@@ -20,7 +20,7 @@ export function StarknetProvider({ children }: StarknetProviderProps) {
     order: 'alphabetical',
   });
 
-  const chains = [sepolia, mainnet];
+  const chains = [mainnet, sepolia];
 
   return (
     <StarknetConfig
@@ -28,6 +28,7 @@ export function StarknetProvider({ children }: StarknetProviderProps) {
       provider={publicProvider()}
       connectors={connectors}
       explorer={voyager}
+      autoConnect={true}
     >
       {children}
     </StarknetConfig>
