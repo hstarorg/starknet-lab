@@ -20,7 +20,7 @@ mod DailyLottery {
 
     const DAY_IN_SECONDS: u64 = 86400;
     const TICKET_COST: u256 = 1000000000000000000; // 1 STRK = 10^18 wei
-    const MIN_GUESS: u8 = 0;
+    const MIN_GUESS: u8 = 10;
     const MAX_GUESS: u8 = 99;
 
     #[storage]
