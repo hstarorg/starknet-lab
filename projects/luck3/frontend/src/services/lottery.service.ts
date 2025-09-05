@@ -1,35 +1,25 @@
-import { Contract, RpcProvider } from 'starknet';
-import {
-  CONTRACT_ADDRESSES,
-  NETWORK_CONFIG,
-  LOTTERY_CONFIG,
-} from './constants';
-import lotteryAbi from './abi/lottery-abi.json';
-import type { CurrentRoundInfo, UserTicket, LotteryError } from './types';
+import { AppEnvs } from '../constants';
+import { Luck3ContractClient } from '../lib/luck3/Luck3ContractClient';
+import type { CurrentRoundInfo, LotteryError, UserTicket } from './types';
+import { AppConf } from '../constants';
 
-export class LotteryService {
-  private contract: Contract;
-  private provider: RpcProvider;
+const LOTTERY_CONFIG = AppConf.LOTTERY_CONFIG;
 
+class LotteryService {
+  private _contractClient: Luck3ContractClient;
   constructor() {
-    this.provider = new RpcProvider({
-      nodeUrl: NETWORK_CONFIG.rpcUrl,
-    });
-
-    this.contract = new Contract(
-      lotteryAbi,
-      CONTRACT_ADDRESSES.lottery,
-      this.provider
+    this._contractClient = new Luck3ContractClient(
+      AppEnvs.Luck3ContractAddress,
+      AppEnvs.rpcUrl
     );
   }
 
-  /**
-   * Get current round information
-   */
   async getCurrentRoundInfo(): Promise<CurrentRoundInfo> {
     try {
-      const [roundId, endTime, prizePool, totalTickets] =
-        await this.contract.call('get_current_round_info');
+      const res = await this._contractClient.getCurrentRoundInfo();
+      const [roundId, endTime, prizePool, totalTickets] = Object.values(
+        res
+      ) as any;
 
       const currentTime = BigInt(Math.floor(Date.now() / 1000));
       const timeRemaining = endTime > currentTime ? endTime - currentTime : 0n;
@@ -54,17 +44,17 @@ export class LotteryService {
     roundId: bigint
   ): Promise<UserTicket | null> {
     try {
-      const [guess, isWinner] = await this.contract.call('get_user_tickets', [
-        userAddress,
-        roundId,
-      ]);
+      const [guess, isWinner] = await this._contractClient.call(
+        'get_user_tickets',
+        [userAddress, roundId]
+      );
 
       if (guess === 0) return null; // No ticket
 
-      const reward = await this.contract.call('get_user_reward', [
+      const reward = (await this._contractClient.call('get_user_reward', [
         userAddress,
         roundId,
-      ]);
+      ])) as bigint;
 
       return {
         roundId,
@@ -83,7 +73,7 @@ export class LotteryService {
    */
   async getRoundWinningNumber(roundId: bigint): Promise<number | null> {
     try {
-      const winningNumber = await this.contract.call(
+      const winningNumber = await this._contractClient.call(
         'get_round_winning_number',
         [roundId]
       );
@@ -104,8 +94,9 @@ export class LotteryService {
     this.validateGuess(guess);
 
     try {
-      const contractWithAccount = this.contract.connect(account);
-      const tx = await contractWithAccount.invoke('buy_ticket', [guess]);
+      const tx = await this._contractClient.invoke(account, 'buy_ticket', [
+        guess,
+      ]);
       return tx.transaction_hash;
     } catch (error) {
       throw this.handleContractError('Failed to buy ticket', error);
@@ -120,8 +111,9 @@ export class LotteryService {
     account: any // StarknetAccount from starknet-react
   ): Promise<string> {
     try {
-      const contractWithAccount = this.contract.connect(account);
-      const tx = await contractWithAccount.invoke('claim_reward', [roundId]);
+      const tx = await this._contractClient.invoke(account, 'claim_reward', [
+        roundId,
+      ]);
       return tx.transaction_hash;
     } catch (error) {
       throw this.handleContractError('Failed to claim reward', error);
@@ -133,11 +125,14 @@ export class LotteryService {
    */
   async triggerDrawIfExpired(account: any): Promise<string | null> {
     try {
-      const contractWithAccount = this.contract.connect(account);
-      const tx = await contractWithAccount.invoke('trigger_draw_if_expired');
+      const tx = await this._contractClient.invoke(
+        account,
+        'trigger_draw_if_expired'
+      );
       return tx.transaction_hash;
     } catch (error) {
       // Round not expired or already drawn
+      console.error('Failed to trigger draw:', error);
       return null;
     }
   }
@@ -219,5 +214,4 @@ export class LotteryService {
   }
 }
 
-// Singleton instance
 export const lotteryService = new LotteryService();

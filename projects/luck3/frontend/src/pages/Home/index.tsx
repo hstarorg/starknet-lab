@@ -7,7 +7,7 @@ export function Home() {
       <p className="text-lg text-gray-600 mb-8">
         Participate in daily lottery draws and win amazing prizes!
       </p>
-      
+
       <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="text-3xl font-bold text-blue-600 mb-2">100%</div>
@@ -23,5 +23,5 @@ export function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }

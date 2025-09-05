@@ -53,6 +53,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.12
         version: 4.1.12
+      valtio:
+        specifier: ^2.1.7
+        version: 2.1.7(@types/react@19.1.12)(react@19.1.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.33.0
@@ -4668,6 +4671,18 @@ packages:
       react:
         optional: true
 
+  valtio@2.1.7:
+    resolution: {integrity: sha512-DwJhCDpujuQuKdJ2H84VbTjEJJteaSmqsuUltsfbfdbotVfNeTE4K/qc/Wi57I9x8/2ed4JNdjEna7O6PfavRg==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      react: '>=18.0.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
+
   viem@2.23.2:
     resolution: {integrity: sha512-NVmW/E0c5crMOtbEAqMF0e3NmvQykFXhLOc/CkLIXOlzHSA6KXVz3CYVmaKqBF8/xtjsjHAGjdJN3Ru1kFJLaA==}
     peerDependencies:
@@ -6317,7 +6332,7 @@ snapshots:
       '@reown/appkit-wallet': 1.7.8(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@walletconnect/logger': 2.1.2
       '@walletconnect/universal-provider': 2.21.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-      valtio: 1.13.2(@types/react@19.1.12)(react@19.1.1)
+      valtio: 1.13.2(@types/react@19.1.12)(react@18.3.1)
       viem: 2.37.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -6371,7 +6386,7 @@ snapshots:
       '@walletconnect/types': 2.21.0
       '@walletconnect/universal-provider': 2.21.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       bs58: 6.0.0
-      valtio: 1.13.2(@types/react@19.1.12)(react@19.1.1)
+      valtio: 1.13.2(@types/react@19.1.12)(react@18.3.1)
       viem: 2.37.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -8537,7 +8552,7 @@ snapshots:
 
   derive-valtio@0.1.0(valtio@1.13.2(@types/react@19.1.12)(react@18.3.1)):
     dependencies:
-      valtio: 1.13.2(@types/react@19.1.12)(react@19.1.1)
+      valtio: 1.13.2(@types/react@19.1.12)(react@18.3.1)
 
   destr@2.0.5: {}
 
@@ -10900,9 +10915,9 @@ snapshots:
       react: 19.1.1
       use-sync-external-store: 1.5.0(react@19.1.1)
 
-  use-sync-external-store@1.2.0(react@19.1.1):
+  use-sync-external-store@1.2.0(react@18.3.1):
     dependencies:
-      react: 19.1.1
+      react: 18.3.1
 
   use-sync-external-store@1.5.0(react@19.1.1):
     dependencies:
@@ -10936,16 +10951,14 @@ snapshots:
     dependencies:
       derive-valtio: 0.1.0(valtio@1.13.2(@types/react@19.1.12)(react@18.3.1))
       proxy-compare: 2.6.0
-      use-sync-external-store: 1.2.0(react@19.1.1)
+      use-sync-external-store: 1.2.0(react@18.3.1)
     optionalDependencies:
       '@types/react': 19.1.12
       react: 18.3.1
 
-  valtio@1.13.2(@types/react@19.1.12)(react@19.1.1):
+  valtio@2.1.7(@types/react@19.1.12)(react@19.1.1):
     dependencies:
-      derive-valtio: 0.1.0(valtio@1.13.2(@types/react@19.1.12)(react@18.3.1))
-      proxy-compare: 2.6.0
-      use-sync-external-store: 1.2.0(react@19.1.1)
+      proxy-compare: 3.0.1
     optionalDependencies:
       '@types/react': 19.1.12
       react: 19.1.1

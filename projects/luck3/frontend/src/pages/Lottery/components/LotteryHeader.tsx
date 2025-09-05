@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ClockIcon, TicketIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import {
+  ClockIcon,
+  TicketIcon,
+  CurrencyDollarIcon,
+} from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
+import { formatSTRK } from '../../../utils';
 
 interface LotteryHeaderProps {
   roundId: bigint;
@@ -10,12 +15,12 @@ interface LotteryHeaderProps {
   loading?: boolean;
 }
 
-export function LotteryHeader({ 
-  roundId, 
-  endTime, 
-  prizePool, 
-  totalTickets, 
-  loading 
+export function LotteryHeader({
+  roundId,
+  endTime,
+  prizePool,
+  totalTickets,
+  loading,
 }: LotteryHeaderProps) {
   const [countdown, setCountdown] = useState('');
 
@@ -23,7 +28,7 @@ export function LotteryHeader({
     const updateCountdown = () => {
       const endDate = new Date(Number(endTime) * 1000);
       const now = new Date();
-      
+
       if (endDate > now) {
         setCountdown(formatDistanceToNow(endDate, { addSuffix: true }));
       } else {
@@ -36,11 +41,6 @@ export function LotteryHeader({
 
     return () => clearInterval(interval);
   }, [endTime]);
-
-  const formatSTRK = (amount: bigint) => {
-    const strk = Number(amount) / 1e18;
-    return strk.toLocaleString('en-US', { maximumFractionDigits: 2 });
-  };
 
   if (loading) {
     return (

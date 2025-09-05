@@ -1,22 +1,32 @@
 import { useState } from 'react';
-import { CheckCircleIcon, XCircleIcon, ClockIcon, CurrencyDollarIcon, TicketIcon } from '@heroicons/react/24/outline';
-import { useLottery } from '../../hooks/useLottery';
-import type { UserTicket } from '../../lib/contract/types';
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  TicketIcon,
+} from '@heroicons/react/24/outline';
+import type { UserTicket } from '../../../services/types';
 
 interface MyTicketsProps {
   onClaimReward?: (roundId: bigint) => void;
+  userTickets: readonly UserTicket[];
+  loading?: boolean;
 }
 
-export function MyTickets({ onClaimReward }: MyTicketsProps) {
-  const { userTickets, loading } = useLottery();
-  const [activeTab, setActiveTab] = useState<'active' | 'won' | 'all'>('active');
+export function MyTickets({
+  userTickets,
+  onClaimReward,
+  loading,
+}: MyTicketsProps) {
+  const [activeTab, setActiveTab] = useState<'active' | 'won' | 'all'>(
+    'active'
+  );
 
   const formatSTRK = (amount: bigint) => {
-    return (Number(amount) / 1e18).toLocaleString('en-US', { maximumFractionDigits: 2 });
-  };
-
-  const formatDate = (timestamp: bigint) => {
-    return new Date(Number(timestamp) * 1000).toLocaleDateString();
+    return (Number(amount) / 1e18).toLocaleString('en-US', {
+      maximumFractionDigits: 2,
+    });
   };
 
   const getStatusColor = (ticket: UserTicket) => {
@@ -27,8 +37,10 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
   };
 
   const getStatusIcon = (ticket: UserTicket) => {
-    if (ticket.isWinner && !ticket.claimed) return <CurrencyDollarIcon className="h-5 w-5 text-green-500" />;
-    if (ticket.isWinner && ticket.claimed) return <CheckCircleIcon className="h-5 w-5 text-blue-500" />;
+    if (ticket.isWinner && !ticket.claimed)
+      return <CurrencyDollarIcon className="h-5 w-5 text-green-500" />;
+    if (ticket.isWinner && ticket.claimed)
+      return <CheckCircleIcon className="h-5 w-5 text-blue-500" />;
     return <XCircleIcon className="h-5 w-5 text-gray-500" />;
   };
 
@@ -38,7 +50,7 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
     return 'Not a winner';
   };
 
-  const filteredTickets = userTickets.filter(ticket => {
+  const filteredTickets = userTickets.filter((ticket) => {
     switch (activeTab) {
       case 'active':
         return !ticket.isWinner || (ticket.isWinner && !ticket.claimed);
@@ -68,7 +80,7 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-gray-900">My Tickets</h3>
-        
+
         <div className="flex space-x-2">
           {['active', 'won', 'all'].map((tab) => (
             <button
@@ -90,7 +102,9 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
         <div className="text-center py-8">
           <TicketIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500">No tickets purchased yet</p>
-          <p className="text-sm text-gray-400 mt-1">Buy your first ticket to participate!</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Buy your first ticket to participate!
+          </p>
         </div>
       ) : filteredTickets.length === 0 ? (
         <div className="text-center py-8">
@@ -103,23 +117,28 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
             <div
               key={ticket.roundId.toString()}
               className={`flex items-center justify-between p-4 rounded-lg border ${
-                ticket.isWinner && !ticket.claimed 
-                  ? 'border-green-200 bg-green-50' 
+                ticket.isWinner && !ticket.claimed
+                  ? 'border-green-200 bg-green-50'
                   : 'border-gray-200'
               }`}
             >
               <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  {getStatusIcon(ticket)}
-                </div>
+                <div className="flex-shrink-0">{getStatusIcon(ticket)}</div>
                 <div>
                   <p className="font-medium text-gray-900">
                     Round #{ticket.roundId.toString()}
                   </p>
                   <p className="text-sm text-gray-600">
-                    Your guess: <span className="font-bold text-purple-600">{ticket.guess}</span>
+                    Your guess:{' '}
+                    <span className="font-bold text-purple-600">
+                      {ticket.guess}
+                    </span>
                   </p>
-                  <p className={`text-xs font-medium px-2 py-1 rounded-full inline-block mt-1 ${getStatusColor(ticket)}`}>
+                  <p
+                    className={`text-xs font-medium px-2 py-1 rounded-full inline-block mt-1 ${getStatusColor(
+                      ticket
+                    )}`}
+                  >
                     {getStatusText(ticket)}
                   </p>
                 </div>
@@ -134,7 +153,7 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
                     Claim {formatSTRK(ticket.reward)} STRK
                   </button>
                 )}
-                
+
                 {ticket.isWinner && ticket.claimed && (
                   <div className="text-right">
                     <p className="text-sm font-medium text-green-600">
@@ -149,7 +168,9 @@ export function MyTickets({ onClaimReward }: MyTicketsProps) {
       )}
 
       <div className="mt-4 text-sm text-gray-500">
-        <p>Showing {filteredTickets.length} of {userTickets.length} tickets</p>
+        <p>
+          Showing {filteredTickets.length} of {userTickets.length} tickets
+        </p>
       </div>
     </div>
   );
