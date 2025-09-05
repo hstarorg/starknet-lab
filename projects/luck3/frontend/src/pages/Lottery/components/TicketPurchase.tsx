@@ -3,7 +3,8 @@ import {
   ArrowRightIcon,
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
-import type { CurrentRoundInfo } from '../../../services/types';
+import type { CurrentRoundInfo } from '@/types/lottery.type';
+
 
 interface TicketPurchaseProps {
   onBuyTicket?: (guess: number) => void;

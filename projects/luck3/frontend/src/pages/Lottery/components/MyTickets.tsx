@@ -6,7 +6,7 @@ import {
   CurrencyDollarIcon,
   TicketIcon,
 } from '@heroicons/react/24/outline';
-import type { UserTicket } from '../../../services/types';
+import type { UserTicket } from '@/types/lottery.type';
 
 interface MyTicketsProps {
   onClaimReward?: (roundId: bigint) => void;

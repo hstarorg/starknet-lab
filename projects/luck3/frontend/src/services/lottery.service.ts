@@ -1,7 +1,6 @@
-import { AppEnvs } from '../constants';
-import { Luck3ContractClient } from '../lib/luck3/Luck3ContractClient';
-import type { CurrentRoundInfo, LotteryError, UserTicket } from './types';
-import { AppConf } from '../constants';
+import { AppEnvs, AppConf } from '@/constants';
+import { Luck3ContractClient } from '@/lib/luck3/Luck3ContractClient';
+import type { CurrentRoundInfo, UserTicket } from '@/types/lottery.type';
 
 const LOTTERY_CONFIG = AppConf.LOTTERY_CONFIG;
 
@@ -176,7 +175,7 @@ class LotteryService {
   /**
    * Handle and categorize contract errors
    */
-  private handleContractError(message: string, error: any): LotteryError {
+  private handleContractError(message: string, error: any) {
     const errorMessage = error?.message || error?.toString() || 'Unknown error';
 
     if (errorMessage.includes('Invalid guess range')) {

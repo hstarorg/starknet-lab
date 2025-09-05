@@ -5,7 +5,7 @@ import {
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
-import { formatSTRK } from '../../../utils';
+import { formatSTRK } from '@/utils';
 
 interface LotteryHeaderProps {
   roundId: bigint;

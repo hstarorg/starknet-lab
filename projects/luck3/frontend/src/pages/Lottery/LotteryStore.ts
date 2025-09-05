@@ -1,6 +1,6 @@
 import { proxy } from 'valtio';
-import { lotteryService } from '../../services/lottery.service';
-import type { CurrentRoundInfo, UserTicket } from '../../services/types';
+import { lotteryService } from '@/services/lottery.service';
+import type { CurrentRoundInfo, UserTicket } from '@/types/lottery.type';
 
 type ViewModel = {
   loading?: boolean;

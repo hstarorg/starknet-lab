@@ -1,7 +1,7 @@
 import { LotteryHeader } from './components/LotteryHeader';
 import { TicketPurchase } from './components/TicketPurchase';
 import { MyTickets } from './components/MyTickets';
-import { useStore } from '../../hooks';
+import { useStore } from '@/hooks';
 import { LotteryStore } from './LotteryStore';
 import { useAccount } from '@starknet-react/core';
 
