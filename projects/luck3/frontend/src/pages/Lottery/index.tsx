@@ -4,10 +4,14 @@ import { MyTickets } from './components/MyTickets';
 import { useStore } from '@/hooks';
 import { LotteryStore } from './LotteryStore';
 import { useAccount } from '@starknet-react/core';
+import { AppConf } from '@/constants';
 
 export function Lottery() {
   const { store, snapshot } = useStore(LotteryStore);
-  const { address } = useAccount();
+  const { address, account } = useAccount();
+  const LOTTERY_CONFIG = AppConf.LOTTERY_CONFIG;
+
+  store.setAccount(account!);
 
   const currentRound = snapshot.currentRound;
 
@@ -16,8 +20,11 @@ export function Lottery() {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Daily Lottery</h1>
         <p className="text-lg text-gray-600">
-          Guess a number <strong>10 - 99</strong> and win STRK tokens in our
-          daily lottery!
+          Guess a number{' '}
+          <strong>
+            {LOTTERY_CONFIG.minGuess} - {LOTTERY_CONFIG.maxGuess}
+          </strong>{' '}
+          and win STRK tokens in our daily lottery!
         </p>
       </div>
 
@@ -32,6 +39,7 @@ export function Lottery() {
           />
 
           <TicketPurchase
+            currentRound={currentRound}
             onBuyTicket={store.handleBuyTicket}
             purchaseLoading={snapshot.purchaseLoading}
             disabled={!currentRound || snapshot.loading}

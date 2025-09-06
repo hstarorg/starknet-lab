@@ -6,12 +6,11 @@ import {
   type Abi,
   type ArgsOrCalldata,
   type TypedContractV2,
+  type InvokeOptions,
+  Account,
+  type Call,
 } from 'starknet';
-import type {
-  ExtractAbiFunctionNames,
-  FunctionArgs,
-  InvokeOptions,
-} from './kanabi';
+import type { ExtractAbiFunctionNames, FunctionArgs } from './kanabi';
 
 export abstract class ContractClientBase<TAbi extends Abi> {
   protected contract: TypedContractV2<TAbi>;
@@ -48,5 +47,11 @@ export abstract class ContractClientBase<TAbi extends Abi> {
   ) {
     this.contract.connect(account);
     return this.contract.invoke(method, args, options);
+  }
+
+  async multicall(calls: Call[], account: AccountInterface) {
+    const multiCall = await account.execute(calls);
+    console.log('MultiCall transaction hash:', multiCall.transaction_hash);
+    return await this.provider.waitForTransaction(multiCall.transaction_hash);
   }
 }

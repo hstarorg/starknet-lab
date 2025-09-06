@@ -1,6 +1,11 @@
 export const AppEnvs = {
   Luck3ContractAddress: import.meta.env.VITE_LUCK3_CONTRACT_ADDRESS as string,
+  StrkTokenAddress: import.meta.env.VITE_STRK_TOKEN_ADDRESS as string,
   rpcUrl: import.meta.env.VITE_RPC_URL as string,
+  appEnv: import.meta.env.VITE_APP_ENV as string,
+  get isProduction() {
+    return this.appEnv === 'production';
+  },
 };
 
 export const AppConf = {

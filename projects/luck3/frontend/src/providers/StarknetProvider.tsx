@@ -8,6 +8,7 @@ import {
   ready,
 } from '@starknet-react/core';
 import { mainnet, sepolia } from '@starknet-react/chains';
+import { AppEnvs } from '@/constants';
 
 interface StarknetProviderProps {
   children: ReactNode;
@@ -20,7 +21,7 @@ export function StarknetProvider({ children }: StarknetProviderProps) {
     order: 'alphabetical',
   });
 
-  const chains = [mainnet, sepolia];
+  const chains = AppEnvs.isProduction ? [mainnet] : [sepolia];
 
   return (
     <StarknetConfig

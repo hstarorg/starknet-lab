@@ -15,3 +15,7 @@ export function formatSTRK(amount: bigint) {
   const strk = Number(amount) / 1e18;
   return strk.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
+
+export function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}

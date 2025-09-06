@@ -1,6 +1,7 @@
 import { proxy } from 'valtio';
 import { lotteryService } from '@/services/lottery.service';
 import type { CurrentRoundInfo, UserTicket } from '@/types/lottery.type';
+import type { AccountInterface } from 'starknet';
 
 type ViewModel = {
   loading?: boolean;
@@ -13,6 +14,8 @@ type ViewModel = {
 };
 
 export class LotteryStore {
+  private account: AccountInterface | null = null;
+
   state = proxy<ViewModel>({
     userTickets: [],
   });
@@ -31,15 +34,19 @@ export class LotteryStore {
     }
   }
 
+  setAccount = (account: AccountInterface) => {
+    this.account = account;
+  };
+
   refresh = () => {
     this.loadData();
   };
 
   handleBuyTicket = async (guess: number) => {
-    // const txHash = await buyTicket(guess);
-    // if (txHash) {
-    //   // Optional: Add success notification
-    // }
+    const txHash = await lotteryService.buyTicket(guess, this.account);
+    if (txHash) {
+      // Optional: Add success notification
+    }
   };
 
   handleClaimReward = async (roundId: bigint) => {

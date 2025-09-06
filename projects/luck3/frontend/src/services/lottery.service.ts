@@ -1,14 +1,26 @@
 import { AppEnvs, AppConf } from '@/constants';
+import { ERC20ContractClient } from '@/lib/erc20/ERC20ContractClient';
 import { Luck3ContractClient } from '@/lib/luck3/Luck3ContractClient';
 import type { CurrentRoundInfo, UserTicket } from '@/types/lottery.type';
+import { notifications } from '@mantine/notifications';
+import { cairo, CallData, type Call } from 'starknet';
 
 const LOTTERY_CONFIG = AppConf.LOTTERY_CONFIG;
 
+// STRK token ABI (minimal for approval)
+
 class LotteryService {
   private _contractClient: Luck3ContractClient;
+
+  private _strkContract: ERC20ContractClient;
+
   constructor() {
     this._contractClient = new Luck3ContractClient(
       AppEnvs.Luck3ContractAddress,
+      AppEnvs.rpcUrl
+    );
+    this._strkContract = new ERC20ContractClient(
+      AppEnvs.StrkTokenAddress,
       AppEnvs.rpcUrl
     );
   }
@@ -33,6 +45,37 @@ class LotteryService {
     } catch (error) {
       throw this.handleContractError('Failed to get current round info', error);
     }
+  }
+
+  /**
+   * Check if user has sufficient STRK balance
+   */
+  private async _checkStrkBalance(userAddress: string): Promise<bigint> {
+    return this._strkContract.balanceOf(userAddress);
+  }
+
+  private async _getStrkAllowance(userAddress: string, spenderAddress: string) {
+    const allowance = await this._strkContract.allowance(
+      userAddress,
+      spenderAddress
+    );
+    return allowance;
+  }
+
+  private async _checkAndApproveAllowance(
+    userAddress: string,
+    spenderAddress: string,
+    amount: bigint
+  ) {
+    const allowance = await this._strkContract.allowance(
+      userAddress,
+      spenderAddress
+    );
+    if (allowance < amount) {
+      const txHash = await this._strkContract.approve(spenderAddress, amount);
+      return txHash;
+    }
+    return '';
   }
 
   /**
@@ -84,7 +127,7 @@ class LotteryService {
   }
 
   /**
-   * Buy a lottery ticket
+   * Buy a lottery ticket with automatic approval handling
    */
   async buyTicket(
     guess: number,
@@ -92,14 +135,43 @@ class LotteryService {
   ): Promise<string> {
     this.validateGuess(guess);
 
-    try {
-      const tx = await this._contractClient.invoke(account, 'buy_ticket', [
-        guess,
-      ]);
-      return tx.transaction_hash;
-    } catch (error) {
-      throw this.handleContractError('Failed to buy ticket', error);
+    const userAddress = account.address;
+
+    const needAmount = LOTTERY_CONFIG.ticketCost;
+    // Check STRK balance
+    const balance = await this._checkStrkBalance(userAddress);
+    if (balance < needAmount) {
+      notifications.show({
+        message: 'Insufficient STRK balance to purchase ticket',
+      });
     }
+
+    // Check current allowance
+    const allowance = await this._getStrkAllowance(
+      userAddress,
+      AppEnvs.Luck3ContractAddress
+    );
+    const calls: Call[] = [];
+    if (allowance < needAmount) {
+      calls.push({
+        contractAddress: AppEnvs.StrkTokenAddress,
+        entrypoint: 'approve',
+        calldata: CallData.compile({
+          spender: AppEnvs.Luck3ContractAddress,
+          amount: cairo.uint256(needAmount),
+        }),
+      });
+    }
+    calls.push({
+      contractAddress: AppEnvs.Luck3ContractAddress,
+      entrypoint: 'buy_ticket',
+      calldata: CallData.compile({ guess }),
+    });
+
+    // Now buy the ticket
+    const tx = await this._contractClient.multicall(calls, account);
+    console.log(tx);
+    return '';
   }
 
   /**
@@ -181,7 +253,7 @@ class LotteryService {
     if (errorMessage.includes('Invalid guess range')) {
       return {
         type: 'validation',
-        message: 'Please enter a number between 0 and 99',
+        message: 'Please enter a number between 10 and 99',
       };
     }
 
@@ -192,10 +264,13 @@ class LotteryService {
       };
     }
 
-    if (errorMessage.includes('Insufficient balance')) {
+    if (
+      errorMessage.includes('Insufficient balance') ||
+      errorMessage.includes('u256_sub Overflow')
+    ) {
       return {
         type: 'insufficient_funds',
-        message: 'Insufficient STRK balance to purchase ticket',
+        message: 'Insufficient STRK balance or allowance to purchase ticket',
       };
     }
 

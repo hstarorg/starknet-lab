@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { NumberInput } from '@mantine/core';
 import {
   ArrowRightIcon,
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 import type { CurrentRoundInfo } from '@/types/lottery.type';
-
+import { randomInt } from '@/utils';
+import { AppConf } from '@/constants';
 
 interface TicketPurchaseProps {
   onBuyTicket?: (guess: number) => void;
@@ -21,15 +23,11 @@ export function TicketPurchase({
   currentRound,
   purchaseLoading,
 }: TicketPurchaseProps) {
-  const [guess, setGuess] = useState('');
+  const LOTTERY_CONFIG = AppConf.LOTTERY_CONFIG;
 
-  const handleGuessChange = (value: string) => {
-    // Only allow numbers 0-99
-    const num = parseInt(value);
-    if (value === '' || (Number.isInteger(num) && num >= 10 && num <= 99)) {
-      setGuess(value);
-    }
-  };
+  const [guess, setGuess] = useState(
+    randomInt(LOTTERY_CONFIG.minGuess, LOTTERY_CONFIG.maxGuess)
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,22 +59,15 @@ export function TicketPurchase({
             Choose your lucky number (10-99)
           </label>
           <div className="relative">
-            <input
-              type="number"
-              id="guess"
+            <NumberInput
+              min={LOTTERY_CONFIG.minGuess}
+              max={LOTTERY_CONFIG.maxGuess}
+              step={1}
               value={guess}
-              onChange={(e) => handleGuessChange(e.target.value)}
-              min="0"
-              max="99"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg text-center"
-              placeholder="00"
+              placeholder="Enter a number for guess"
+              onChange={(v) => setGuess(v as number)}
               disabled={disabled || purchaseLoading}
             />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 text-sm">
-                {guess ? String(parseInt(guess)).padStart(2, '0') : '--'}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -110,10 +101,6 @@ export function TicketPurchase({
           )}
         </button>
       </form>
-
-      <div className="mt-4 text-xs text-gray-500 text-center">
-        <p>⚡ Powered by Starknet • Fair & Transparent</p>
-      </div>
     </div>
   );
 }
