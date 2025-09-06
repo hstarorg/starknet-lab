@@ -3,6 +3,7 @@ import {
   ClockIcon,
   TicketIcon,
   CurrencyDollarIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { formatSTRK } from '@/utils';
@@ -15,7 +16,7 @@ interface LotteryHeaderProps {
   loading?: boolean;
 }
 
-export function LotteryHeader({
+export function CurrentLottery({
   roundId,
   endTime,
   prizePool,
@@ -59,7 +60,7 @@ export function LotteryHeader({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="text-center">
           <div className="flex justify-center mb-2">
-            <TicketIcon className="h-8 w-8 text-purple-200" />
+            <RocketLaunchIcon className="h-8 w-8 text-purple-200" />
           </div>
           <div className="text-3xl font-bold">{Number(roundId)}</div>
           <div className="text-purple-200 text-sm">Current Round</div>

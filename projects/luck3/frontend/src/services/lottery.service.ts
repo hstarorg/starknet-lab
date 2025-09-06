@@ -62,22 +62,6 @@ class LotteryService {
     return allowance;
   }
 
-  private async _checkAndApproveAllowance(
-    userAddress: string,
-    spenderAddress: string,
-    amount: bigint
-  ) {
-    const allowance = await this._strkContract.allowance(
-      userAddress,
-      spenderAddress
-    );
-    if (allowance < amount) {
-      const txHash = await this._strkContract.approve(spenderAddress, amount);
-      return txHash;
-    }
-    return '';
-  }
-
   /**
    * Get user's ticket for a specific round
    */
@@ -85,29 +69,27 @@ class LotteryService {
     userAddress: string,
     roundId: bigint
   ): Promise<UserTicket | null> {
-    try {
-      const [guess, isWinner] = await this._contractClient.call(
-        'get_user_tickets',
-        [userAddress, roundId]
-      );
+    const res = await this._contractClient.call('get_user_tickets', [
+      userAddress,
+      roundId,
+    ]);
+    console.log('User ticket response:', res);
+    const [guess, isWinner] = Object.values(res) as [number, boolean];
 
-      if (guess === 0) return null; // No ticket
+    if (guess === 0) return null; // No ticket
 
-      const reward = (await this._contractClient.call('get_user_reward', [
-        userAddress,
-        roundId,
-      ])) as bigint;
+    const reward = (await this._contractClient.call('get_user_reward', [
+      userAddress,
+      roundId,
+    ])) as bigint;
 
-      return {
-        roundId,
-        guess: Number(guess),
-        isWinner,
-        reward,
-        claimed: false, // TODO: Check claimed status
-      };
-    } catch (error) {
-      throw this.handleContractError('Failed to get user ticket', error);
-    }
+    return {
+      roundId,
+      guess: Number(guess),
+      isWinner,
+      reward,
+      claimed: false, // TODO: Check claimed status
+    };
   }
 
   /**
@@ -133,11 +115,11 @@ class LotteryService {
     guess: number,
     account: any // StarknetAccount from starknet-react
   ): Promise<string> {
-    this.validateGuess(guess);
+    this._validateGuess(guess);
 
     const userAddress = account.address;
-
     const needAmount = LOTTERY_CONFIG.ticketCost;
+
     // Check STRK balance
     const balance = await this._checkStrkBalance(userAddress);
     if (balance < needAmount) {
@@ -151,6 +133,7 @@ class LotteryService {
       userAddress,
       AppEnvs.Luck3ContractAddress
     );
+
     const calls: Call[] = [];
     if (allowance < needAmount) {
       calls.push({
@@ -209,34 +192,9 @@ class LotteryService {
   }
 
   /**
-   * Get user's tickets across all rounds
-   */
-  async getUserTickets(userAddress: string): Promise<UserTicket[]> {
-    try {
-      const currentRound = await this.getCurrentRoundInfo();
-      const tickets: UserTicket[] = [];
-
-      // Check last 10 rounds for simplicity
-      for (let i = 0; i < 10; i++) {
-        const roundId = currentRound.roundId - BigInt(i);
-        if (roundId <= 0) break;
-
-        const ticket = await this.getUserTicket(userAddress, roundId);
-        if (ticket) {
-          tickets.push(ticket);
-        }
-      }
-
-      return tickets;
-    } catch (error) {
-      throw this.handleContractError('Failed to get user tickets', error);
-    }
-  }
-
-  /**
    * Validate guess range
    */
-  private validateGuess(guess: number): void {
+  private _validateGuess(guess: number): void {
     if (guess < LOTTERY_CONFIG.minGuess || guess > LOTTERY_CONFIG.maxGuess) {
       throw new Error(
         `Guess must be between ${LOTTERY_CONFIG.minGuess} and ${LOTTERY_CONFIG.maxGuess}`

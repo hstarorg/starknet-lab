@@ -1,10 +1,13 @@
-import { LotteryHeader } from './components/LotteryHeader';
 import { TicketPurchase } from './components/TicketPurchase';
-import { MyTickets } from './components/MyTickets';
+import { CurrentLottery } from './components/CurrentLottery';
+import { TicketItem } from './components/TicketItem';
+import { RecentLottery } from './components/RecentLottery';
 import { useStore } from '@/hooks';
 import { LotteryStore } from './LotteryStore';
 import { useAccount } from '@starknet-react/core';
 import { AppConf } from '@/constants';
+import { useEffect } from 'react';
+import { LoadingArea } from '@/components/loading-area';
 
 export function Lottery() {
   const { store, snapshot } = useStore(LotteryStore);
@@ -12,8 +15,14 @@ export function Lottery() {
   const LOTTERY_CONFIG = AppConf.LOTTERY_CONFIG;
 
   store.setAccount(account!);
-
   const currentRound = snapshot.currentRound;
+
+  useEffect(() => {
+    if (account?.address && currentRound?.roundId) {
+      store.fetchUserTicket();
+      store.fetchRecentRounds();
+    }
+  }, [store, account?.address, currentRound?.roundId]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
@@ -28,31 +37,39 @@ export function Lottery() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <LotteryHeader
+      <div className="flex gap-4">
+        <div className="flex-2">
+          <CurrentLottery
             roundId={currentRound?.roundId || 0n}
             endTime={currentRound?.endTime || 0n}
             prizePool={currentRound?.prizePool || 0n}
             totalTickets={currentRound?.totalTickets || 0n}
             loading={snapshot.loading}
           />
-
-          <TicketPurchase
-            currentRound={currentRound}
-            onBuyTicket={store.handleBuyTicket}
-            purchaseLoading={snapshot.purchaseLoading}
-            disabled={!currentRound || snapshot.loading}
-            isConnected={!!address}
-          />
+          <LoadingArea
+            loading={snapshot.userTicketLoading}
+            loaded={snapshot.userTicketChecked}
+            className="mt-4 min-h-[200px]"
+          >
+            {snapshot.userTicket ? (
+              <TicketItem
+                ticket={snapshot.userTicket}
+                onClaimReward={store.handleClaimReward}
+                isCurrentRound={true}
+              />
+            ) : (
+              <TicketPurchase
+                currentRound={currentRound}
+                onBuyTicket={store.handleBuyTicket}
+                purchaseLoading={snapshot.purchaseLoading}
+                disabled={!currentRound || snapshot.loading}
+                isConnected={!!address}
+              />
+            )}
+          </LoadingArea>
         </div>
-
-        <div className="lg:col-span-1">
-          <MyTickets
-            userTickets={snapshot.userTickets}
-            loading={snapshot.userTicketsLoading}
-            onClaimReward={store.handleClaimReward}
-          />
+        <div className="flex-1">
+          <RecentLottery />
         </div>
       </div>
     </div>
