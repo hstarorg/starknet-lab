@@ -2,7 +2,7 @@ use starknet::{ContractAddress};
 use starknet::storage::*;
 
 #[starknet::interface]
-trait IDailyLottery<TContractState> {
+pub trait IDailyLottery<TContractState> {
     fn buy_ticket(ref self: TContractState, guess: u8);
     fn claim_reward(ref self: TContractState, round_id: u64);
     fn get_current_round_info(self: @TContractState) -> (u64, u64, u256, u64);
@@ -26,6 +26,7 @@ mod DailyLottery {
     #[storage]
     struct Storage {
         strk_token: ContractAddress,
+        fee_address: ContractAddress,
         current_round_id: u64,
         rounds: Map<u64, Round>,
         user_tickets: Map<(u64, ContractAddress), u8>, // (round_id, user) -> guess
@@ -91,24 +92,26 @@ mod DailyLottery {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, strk_token: ContractAddress) {
+    fn constructor(ref self: ContractState, strk_token: ContractAddress, fee_address: ContractAddress) {
         self.strk_token.write(strk_token);
+        self.fee_address.write(fee_address);
         self.current_round_id.write(1);
-        
+
         let current_time = get_block_timestamp();
+        let start_of_day = current_time - (current_time % DAY_IN_SECONDS);
         let first_round = Round {
             id: 1,
-            start_time: current_time,
-            end_time: current_time + DAY_IN_SECONDS,
+            start_time: start_of_day,
+            end_time: start_of_day + DAY_IN_SECONDS,
             prize_pool: 0,
             winning_number: 0,
             is_drawn: false,
         };
         self.rounds.write(1, first_round);
-        
+
         self.emit(NewRoundStarted {
             round_id: 1,
-            start_time: current_time,
+            start_time: start_of_day,
             timestamp: current_time,
         });
     }
@@ -204,17 +207,39 @@ mod DailyLottery {
         }
 
         fn get_user_tickets(self: @ContractState, user: ContractAddress, round_id: u64) -> (u8, bool) {
+            // Check if round exists in storage
+            let round = self.rounds.read(round_id);
+            if round.id == 0 {
+                // Round doesn't exist - this is a missed/skipped round
+                // For missed rounds, no one has tickets
+                return (0, false);
+            }
+
             let guess = self.user_tickets.read((round_id, user));
             let is_winner = self.user_is_winner.read((round_id, user));
             (guess, is_winner)
         }
 
         fn get_user_reward(self: @ContractState, user: ContractAddress, round_id: u64) -> u256 {
+            // Check if round exists in storage
+            let round = self.rounds.read(round_id);
+            if round.id == 0 {
+                // Round doesn't exist - this is a missed/skipped round
+                // For missed rounds, no one has rewards
+                return 0;
+            }
+
             self.user_rewards.read((round_id, user))
         }
 
         fn get_round_winning_number(self: @ContractState, round_id: u64) -> u8 {
             let round = self.rounds.read(round_id);
+            if round.id == 0 {
+                // Round doesn't exist - this is a missed/skipped round
+                // Missed rounds are considered drawn with winning number 0
+                return 0;
+            }
+
             assert(round.is_drawn, 'Round not drawn yet');
             round.winning_number
         }
@@ -223,26 +248,32 @@ mod DailyLottery {
             let current_time = get_block_timestamp();
             let mut current_round_id = self.current_round_id.read();
             let mut current_round = self.rounds.read(current_round_id);
-            
+
             if current_time >= current_round.end_time && !current_round.is_drawn {
-                self.draw_winner(current_round_id);
-                
-                // Start new round
-                let new_round_id = current_round_id + 1;
+                // Draw the current expired round
+                let rollover = self.draw_winner(current_round_id);
+
+                // Calculate how many days have passed to determine next round ID
+                let time_passed = current_time - current_round.end_time;
+                let full_days_passed = time_passed / DAY_IN_SECONDS;
+
+                // Start new round for the current day
+                let new_round_id = current_round_id + full_days_passed + 1;
+                let new_start_time = current_round.end_time + full_days_passed * DAY_IN_SECONDS;
                 let new_round = Round {
                     id: new_round_id,
-                    start_time: current_time,
-                    end_time: current_time + DAY_IN_SECONDS,
-                    prize_pool: 0,
+                    start_time: new_start_time,
+                    end_time: new_start_time + DAY_IN_SECONDS,
+                    prize_pool: rollover, // Include rolled over prize pool
                     winning_number: 0,
                     is_drawn: false,
                 };
                 self.rounds.write(new_round_id, new_round);
                 self.current_round_id.write(new_round_id);
-                
+
                 self.emit(NewRoundStarted {
                     round_id: new_round_id,
-                    start_time: current_time,
+                    start_time: new_start_time,
                     timestamp: current_time,
                 });
             }
@@ -251,75 +282,96 @@ mod DailyLottery {
 
     #[generate_trait]
     impl PrivateImpl of PrivateTrait {
-        fn draw_winner(ref self: ContractState, round_id: u64) {
+        fn draw_winner(ref self: ContractState, round_id: u64) -> u256 {
             let mut round = self.rounds.read(round_id);
             assert(!round.is_drawn, 'Round already drawn');
-            
+
             let total_tickets = self.total_tickets.read(round_id);
+            let current_prize_pool = round.prize_pool; // Store prize pool before moving round
+
+            // Deduct 10% fee from prize pool
+            let fee_amount = current_prize_pool / 10; // 10% fee
+            let prize_pool_after_fee = current_prize_pool - fee_amount;
+
+            // Transfer fee to fee address
+            if fee_amount > 0 {
+                let strk_dispatcher = IERC20Dispatcher { contract_address: self.strk_token.read() };
+                strk_dispatcher.transfer(self.fee_address.read(), fee_amount);
+            }
+
             if total_tickets == 0 {
-                // No tickets, no winner
+                // No tickets, prize pool after fee rolls to next round
                 round.is_drawn = true;
                 self.rounds.write(round_id, round);
-                return;
+                self.emit(WinnerDrawn {
+                    round_id,
+                    winning_number: 0,
+                    prize_pool: current_prize_pool,
+                    winner_count: 0,
+                    reward_per_winner: 0,
+                    timestamp: get_block_timestamp(),
+                });
+                return prize_pool_after_fee;
             }
-            
+
             // Generate winning number using block timestamp
             let timestamp = get_block_timestamp();
             let hash_data: u256 = timestamp.into();
             let winning_number = ((hash_data % 100_u256) & 0xFF).try_into().unwrap();
-            
+
             round.winning_number = winning_number;
             round.is_drawn = true;
-            let prize_pool = round.prize_pool;
-            
+
             // Count winners
             let winner_count = self.correct_guesses.read((round_id, winning_number));
-            
+
             if winner_count == 0 {
-                // No winners, prize rolls to next round
-                let reward_per_winner = 0;
+                // No winners, prize pool after fee rolls to next round
                 self.rounds.write(round_id, round);
                 self.emit(WinnerDrawn {
                     round_id,
                     winning_number,
-                    prize_pool,
+                    prize_pool: current_prize_pool,
                     winner_count: 0,
-                    reward_per_winner,
+                    reward_per_winner: 0,
                     timestamp: get_block_timestamp(),
                 });
-                return;
+                return prize_pool_after_fee;
             }
-            
-            // Calculate reward per winner
-            let reward_per_winner = prize_pool / winner_count.into();
-            
+
+            // Winners get 100% of the prize pool after fee (no rollover when there are winners)
+            let reward_per_winner = prize_pool_after_fee / winner_count.into();
+
             // Identify and reward winners
             let mut i = 0;
             let mut actual_winners = 0;
-            
+
             while i < total_tickets {
                 let participant = self.participants.read((round_id, i));
                 let guess = self.user_tickets.read((round_id, participant));
-                
+
                 if guess == winning_number {
                     self.user_is_winner.write((round_id, participant), true);
                     self.user_rewards.write((round_id, participant), reward_per_winner);
                     actual_winners += 1;
                 }
-                
+
                 i += 1;
             }
-            
+
             self.rounds.write(round_id, round);
-            
+
             self.emit(WinnerDrawn {
                 round_id,
                 winning_number,
-                prize_pool,
+                prize_pool: current_prize_pool,
                 winner_count: actual_winners,
                 reward_per_winner,
                 timestamp: get_block_timestamp(),
             });
+
+            // No rollover when there are winners - all funds distributed
+            return 0;
         }
     }
 }
