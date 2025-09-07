@@ -155,7 +155,9 @@ fn test_round_expiration_and_new_round() {
     let (new_round_id, _, new_prize_pool, new_tickets) = lottery_dispatcher
         .get_current_round_info();
     assert(new_round_id == 2, 'Should be round 2');
-    assert(new_prize_pool == 1000000000000000000, 'New round should have 1 STRK');
+    // Since round 1 had no winner, 0.9 STRK (after 10% fee) rolls over to round 2
+    // Plus the new ticket purchase of 1 STRK = 1.9 STRK total
+    assert(new_prize_pool == 1900000000000000000, 'New round should have 1.9 STRK');
     assert(new_tickets == 1, 'New round should have 1 ticket');
 
     stop_cheat_block_timestamp(lottery_address);
@@ -415,15 +417,41 @@ fn test_double_reward_claim() {
     let user: ContractAddress = 111111.try_into().unwrap();
     setup_user(strk_dispatcher, lottery_address, user, 10000000000000000000);
 
-    // Buy ticket and setup as winner (simulating draw process)
+    // Buy ticket with guess 42
     start_cheat_caller_address(lottery_address, user);
     lottery_dispatcher.buy_ticket(42);
-
-    // First claim should work (would need to be winner)
-    // This test demonstrates the panic case for double claiming
-    // In real scenario, user would need to be a winner first
-
     stop_cheat_caller_address(lottery_address);
+
+    // Advance time to a specific timestamp that will generate winning number 42
+    // We need timestamp % 100 == 42
+    let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
+    let target_timestamp = end_time + 1000;
+    // Adjust timestamp so that (timestamp % 100) == 42
+    let winning_timestamp = if target_timestamp % 100 <= 42 {
+        target_timestamp + (42 - (target_timestamp % 100))
+    } else {
+        target_timestamp + (100 - (target_timestamp % 100)) + 42
+    };
+
+    start_cheat_block_timestamp(lottery_address, winning_timestamp);
+    lottery_dispatcher.trigger_draw_if_expired();
+
+    // Verify user is winner (winning number should be 42)
+    let winning_number = lottery_dispatcher.get_round_winning_number(1);
+    assert(winning_number == 42, 'Winning number should be 42');
+
+    let (_, is_winner) = lottery_dispatcher.get_user_tickets(user, 1);
+    assert(is_winner, 'User should be winner');
+
+    // First claim should work
+    start_cheat_caller_address(lottery_address, user);
+    lottery_dispatcher.claim_reward(1);
+
+    // Second claim should panic
+    lottery_dispatcher.claim_reward(1); // Should panic with 'Reward already claimed'
+    stop_cheat_caller_address(lottery_address);
+
+    stop_cheat_block_timestamp(lottery_address);
 }
 
 #[test]
@@ -519,8 +547,8 @@ fn test_prize_rollover() {
 
     let (_, _, prize_pool2, _) = lottery_dispatcher.get_current_round_info();
 
-    // Prize should be 1 STRK for new round
-    assert(prize_pool2 == 1000000000000000000, 'New round should have 1 STRK');
+    // Prize should be 1.9 STRK (0.9 from rollover + 1 from new ticket)
+    assert(prize_pool2 == 1900000000000000000, 'New round should have 1.9 STRK');
 
     stop_cheat_block_timestamp(lottery_address);
 }
@@ -606,4 +634,3 @@ fn test_round_id_continuity() {
 
     stop_cheat_block_timestamp(lottery_address);
 }
-
