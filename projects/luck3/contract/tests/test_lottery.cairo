@@ -7,6 +7,8 @@ use snforge_std_deprecated::{
 use starknet::ContractAddress;
 use super::mock_erc20::{IMockERC20Dispatcher, IMockERC20DispatcherTrait};
 
+const ROUND_DURATION_SECONDS: u64 = 86400;
+
 fn setup_test() -> (
     IDailyLotteryDispatcher,
     ContractAddress,
@@ -142,9 +144,9 @@ fn test_round_expiration_and_new_round() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time past round end
+    // Advance time past round end (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     // Buy another ticket, should trigger new round
     start_cheat_caller_address(lottery_address, user);
@@ -175,9 +177,9 @@ fn test_trigger_draw_if_expired() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time past round end
+    // Advance time past round end (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     // Trigger draw
     lottery_dispatcher.trigger_draw_if_expired();
@@ -204,9 +206,10 @@ fn test_get_winning_number_before_draw() {
 fn test_no_tickets_in_round() {
     let (lottery_dispatcher, lottery_address, _, _, _, _) = setup_test();
 
-    // Advance time and trigger draw on empty round
+    // Advance time and trigger draw on empty round (exactly 5 minutes + 1 second to trigger new
+    // round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     lottery_dispatcher.trigger_draw_if_expired();
 
@@ -229,9 +232,9 @@ fn test_fee_deduction_and_transfer() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time and trigger draw
+    // Advance time and trigger draw (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     // Check fee address balance before draw
     let fee_balance_before = strk_dispatcher.balance_of(fee_address);
@@ -278,9 +281,9 @@ fn test_winner_calculation_and_100_percent_distribution() {
     let (_, _, prize_pool, _) = lottery_dispatcher.get_current_round_info();
     assert(prize_pool == 3000000000000000000, 'Prize pool should be 3 STRK');
 
-    // Advance time and trigger draw
+    // Advance time and trigger draw (5 minutes + 10 seconds buffer)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + ROUND_DURATION_SECONDS + 10);
 
     lottery_dispatcher.trigger_draw_if_expired();
 
@@ -335,9 +338,9 @@ fn test_prize_rollover_no_winners() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time and trigger draw
+    // Advance time and trigger draw (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     lottery_dispatcher.trigger_draw_if_expired();
 
@@ -360,16 +363,16 @@ fn test_skipped_rounds_gas_optimization() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time by 3 days (simulating 3 skipped rounds)
+    // Advance time by 15 minutes (simulating 3 skipped rounds of 5 minutes each)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + (3 * 86400) + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + (3 * ROUND_DURATION_SECONDS) + 1);
 
     // Trigger draw - should advance to round 5 (1 + 3 + 1)
     lottery_dispatcher.trigger_draw_if_expired();
 
     // Verify round advanced correctly
     let (current_round_id, _, _, _) = lottery_dispatcher.get_current_round_info();
-    // Should advance to round 5 after 3 skipped days
+    // Should advance to round 5 after 3 skipped rounds
     assert(current_round_id == 5, 'Should advance to round 5');
 
     // Verify we can query skipped rounds (should return default values)
@@ -410,9 +413,6 @@ fn test_missed_round_queries() {
 }
 
 
-
-
-
 #[test]
 #[should_panic(expected: 'Round not drawn yet')]
 fn test_claim_before_draw() {
@@ -439,9 +439,9 @@ fn test_claim_without_being_winner() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time and trigger draw
+    // Advance time and trigger draw (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     lottery_dispatcher.trigger_draw_if_expired();
 
@@ -465,9 +465,9 @@ fn test_edge_case_no_winners() {
     lottery_dispatcher.buy_ticket(42);
     stop_cheat_caller_address(lottery_address);
 
-    // Advance time and trigger draw
+    // Advance time and trigger draw (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
 
     lottery_dispatcher.trigger_draw_if_expired();
 
@@ -495,7 +495,7 @@ fn test_prize_rollover() {
     stop_cheat_caller_address(lottery_address);
 
     let (_, end_time1, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time1 + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time1 + 1);
 
     lottery_dispatcher.trigger_draw_if_expired();
 
@@ -534,7 +534,7 @@ fn test_multiple_rounds_with_different_winners() {
 
     // Complete round 1
     let (_, end_time1, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time1 + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time1 + 1);
     lottery_dispatcher.trigger_draw_if_expired();
 
     // Round 2: Only user1 buys ticket
@@ -544,7 +544,7 @@ fn test_multiple_rounds_with_different_winners() {
 
     // Complete round 2
     let (_, end_time2, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time2 + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time2 + 1);
     lottery_dispatcher.trigger_draw_if_expired();
 
     // Verify round progression
@@ -566,9 +566,9 @@ fn test_boundary_guess_values() {
     // Test minimum valid guess (5)
     lottery_dispatcher.buy_ticket(10);
 
-    // Advance to next round
+    // Advance to next round (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
     lottery_dispatcher.buy_ticket(50); // Test maximum valid guess (50)
 
     stop_cheat_caller_address(lottery_address);
@@ -583,9 +583,9 @@ fn test_round_id_continuity() {
     let (round_id1, _, _, _) = lottery_dispatcher.get_current_round_info();
     assert(round_id1 == 1, 'Initial round should be 1');
 
-    // Advance time and trigger new round
+    // Advance time and trigger new round (exactly 5 minutes + 1 second to trigger new round)
     let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
-    start_cheat_block_timestamp(lottery_address, end_time + 1000);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
     lottery_dispatcher.trigger_draw_if_expired();
 
     let (round_id2, _, _, _) = lottery_dispatcher.get_current_round_info();

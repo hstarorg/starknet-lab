@@ -18,7 +18,7 @@ mod DailyLottery {
     use starknet::storage::*;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
 
-    const DAY_IN_SECONDS: u64 = 86400;
+    const ROUND_DURATION_SECONDS: u64 = 86400; //  per round
     const TICKET_COST: u256 = 1000000000000000000; // 1 STRK = 10^18 wei
     const MIN_GUESS: u8 = 10;
     const MAX_GUESS: u8 = 99;
@@ -100,11 +100,11 @@ mod DailyLottery {
         self.current_round_id.write(1);
 
         let current_time = get_block_timestamp();
-        let start_of_day = current_time - (current_time % DAY_IN_SECONDS);
+        let start_of_round = current_time - (current_time % ROUND_DURATION_SECONDS);
         let first_round = Round {
             id: 1,
-            start_time: start_of_day,
-            end_time: start_of_day + DAY_IN_SECONDS,
+            start_time: start_of_round,
+            end_time: start_of_round + ROUND_DURATION_SECONDS,
             prize_pool: 0,
             winning_number: 0,
             is_drawn: false,
@@ -113,7 +113,9 @@ mod DailyLottery {
 
         self
             .emit(
-                NewRoundStarted { round_id: 1, start_time: start_of_day, timestamp: current_time },
+                NewRoundStarted {
+                    round_id: 1, start_time: start_of_round, timestamp: current_time,
+                },
             );
     }
 
@@ -256,17 +258,18 @@ mod DailyLottery {
                 // Draw the current expired round
                 let rollover = self.draw_winner(current_round_id);
 
-                // Calculate how many days have passed to determine next round ID
+                // Calculate how many rounds have passed to determine next round ID
                 let time_passed = current_time - current_round.end_time;
-                let full_days_passed = time_passed / DAY_IN_SECONDS;
+                let full_rounds_passed = time_passed / ROUND_DURATION_SECONDS;
 
-                // Start new round for the current day
-                let new_round_id = current_round_id + full_days_passed + 1;
-                let new_start_time = current_round.end_time + full_days_passed * DAY_IN_SECONDS;
+                // Start new round
+                let new_round_id = current_round_id + full_rounds_passed + 1;
+                let new_start_time = current_round.end_time
+                    + full_rounds_passed * ROUND_DURATION_SECONDS;
                 let new_round = Round {
                     id: new_round_id,
                     start_time: new_start_time,
-                    end_time: new_start_time + DAY_IN_SECONDS,
+                    end_time: new_start_time + ROUND_DURATION_SECONDS,
                     prize_pool: rollover, // Include rolled over prize pool
                     winning_number: 0,
                     is_drawn: false,
