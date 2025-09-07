@@ -27,8 +27,8 @@ export function Lottery() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Daily Lottery</h1>
-        <p className="text-lg text-gray-600">
+        <h1 className="text-3xl font-bold text-white mb-2">Daily Lottery</h1>
+        <p className="text-lg text-gray-300">
           Guess a number{' '}
           <strong>
             {LOTTERY_CONFIG.minGuess} - {LOTTERY_CONFIG.maxGuess}

@@ -1,56 +1,25 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
+import { HomeStore } from './HomeStore';
+import { useStore } from '@/hooks';
+import { numberDiv } from '@bizjs/biz-utils';
+import { AppConf } from '@/constants';
+
+const { LOTTERY_CONFIG } = AppConf;
 
 export function Home() {
   const navigate = useNavigate();
-  const [timeRemaining, setTimeRemaining] = useState('');
-  const [animatedCount, setAnimatedCount] = useState(0);
+  const { snapshot } = useStore(HomeStore);
 
   // 模拟实时数据（实际项目中可以从合约获取）
-  const mockStats = {
-    currentPrizePool: 1250,
-    totalTicketsToday: 1250,
-    participantsToday: 892,
-    totalRounds: 45,
+  const stats = {
+    currentPrizePool: Number(
+      numberDiv(String(snapshot.currentRound?.prizePool || 0), 10 ** 18)
+    ),
+    totalTicketsToday: snapshot.currentRound?.totalTickets || 0,
+    participantsToday: Number(snapshot.currentRound?.totalTickets || 0),
+    totalRounds: snapshot.currentRound?.roundId || 0,
+    endTime: snapshot.currentRound?.endTime,
   };
-
-  useEffect(() => {
-    // 计算下一轮结束时间（假设每天24点结束）
-    const updateCountdown = () => {
-      const now = new Date();
-      const endOfDay = new Date(now);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      if (now < endOfDay) {
-        setTimeRemaining(formatDistanceToNow(endOfDay, { addSuffix: true }));
-      } else {
-        setTimeRemaining('Round ended');
-      }
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-
-    // 动画计数器
-    const animateCounter = () => {
-      const target = mockStats.participantsToday;
-      const increment = target / 100;
-      const timer = setInterval(() => {
-        setAnimatedCount((prev) => {
-          if (prev >= target) {
-            clearInterval(timer);
-            return target;
-          }
-          return Math.floor(prev + increment);
-        });
-      }, 20);
-    };
-
-    setTimeout(animateCounter, 500);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleJoinLottery = () => {
     navigate('/lottery');
@@ -125,8 +94,10 @@ export function Home() {
 
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             🎯 Guess a number between{' '}
-            <strong className="text-white">10-99</strong> and share in the daily
-            prize pool.
+            <strong className="text-white">
+              {LOTTERY_CONFIG.minGuess}-{LOTTERY_CONFIG.maxGuess}
+            </strong>{' '}
+            and share in the daily prize pool.
             <br />
             <span className="text-green-400 font-semibold">
               Only 1 STRK per ticket!
@@ -151,7 +122,7 @@ export function Home() {
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">⏰</div>
             <div className="text-2xl font-bold text-white mb-1">
-              {timeRemaining}
+              {snapshot.timeRemaining}
             </div>
             <div className="text-gray-400 text-sm">Time Remaining</div>
           </div>
@@ -159,7 +130,7 @@ export function Home() {
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">💰</div>
             <div className="text-2xl font-bold text-green-400 mb-1">
-              {mockStats.currentPrizePool.toLocaleString()}
+              {stats.currentPrizePool.toLocaleString()}
             </div>
             <div className="text-gray-400 text-sm">STRK Prize Pool</div>
           </div>
@@ -167,7 +138,7 @@ export function Home() {
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">🎫</div>
             <div className="text-2xl font-bold text-blue-400 mb-1">
-              {mockStats.totalTicketsToday.toLocaleString()}
+              {stats.totalTicketsToday.toLocaleString()}
             </div>
             <div className="text-gray-400 text-sm">Tickets Today</div>
           </div>
@@ -175,7 +146,7 @@ export function Home() {
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">👥</div>
             <div className="text-2xl font-bold text-purple-400 mb-1">
-              {animatedCount.toLocaleString()}
+              {stats.participantsToday.toLocaleString()}
             </div>
             <div className="text-gray-400 text-sm">Participants</div>
           </div>
@@ -242,7 +213,8 @@ export function Home() {
                 Buy Ticket
               </h4>
               <p className="text-gray-400">
-                Choose a number 10-99 and pay 1 STRK
+                Choose a number {LOTTERY_CONFIG.minGuess}-
+                {LOTTERY_CONFIG.maxGuess} and pay 1 STRK
               </p>
             </div>
             <div className="text-center">
