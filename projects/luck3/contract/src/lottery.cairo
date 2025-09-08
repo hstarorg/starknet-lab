@@ -18,7 +18,7 @@ mod DailyLottery {
     use starknet::storage::*;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
 
-    const ROUND_DURATION_SECONDS: u64 = 86400; //  per round
+    const ROUND_DURATION_SECONDS: u64 = 300; //  per round
     const TICKET_COST: u256 = 1000000000000000000; // 1 STRK = 10^18 wei
     const MIN_GUESS: u8 = 10;
     const MAX_GUESS: u8 = 99;
@@ -126,14 +126,85 @@ mod DailyLottery {
 
             let caller = get_caller_address();
             let current_time = get_block_timestamp();
-            let mut current_round_id = self.current_round_id.read();
-            let mut current_round = self.rounds.read(current_round_id);
 
-            // Check if current round has expired and handle drawing
-            if current_time >= current_round.end_time {
-                self.trigger_draw_if_expired();
-                current_round_id = self.current_round_id.read();
-                current_round = self.rounds.read(current_round_id);
+            // Calculate current round ID dynamically
+            let first_round = self.rounds.read(1);
+            let first_round_start_time = first_round.start_time;
+            let time_elapsed = current_time - first_round_start_time;
+            let mut current_round_id = (time_elapsed / ROUND_DURATION_SECONDS) + 1;
+
+            // Check for expired rounds before creating new round
+            let mut check_round_id = 1;
+            loop {
+                let check_round = self.rounds.read(check_round_id);
+                if check_round.id != check_round_id {
+                    // Round doesn't exist, stop checking
+                    break;
+                }
+                if !check_round.is_drawn && current_time >= check_round.end_time {
+                    // Found expired round, draw it
+                    let rollover = self.draw_winner(check_round_id);
+
+                    // Create next round if needed
+                    let next_round_id = check_round_id + 1;
+                    let next_round = self.rounds.read(next_round_id);
+                    if next_round.id != next_round_id {
+                        let next_start_time = check_round.end_time;
+                        let new_round = Round {
+                            id: next_round_id,
+                            start_time: next_start_time,
+                            end_time: next_start_time + ROUND_DURATION_SECONDS,
+                            prize_pool: rollover,
+                            winning_number: 0,
+                            is_drawn: false,
+                        };
+                        self.rounds.write(next_round_id, new_round);
+                        self.current_round_id.write(next_round_id);
+
+                        self
+                            .emit(
+                                NewRoundStarted {
+                                    round_id: next_round_id,
+                                    start_time: next_start_time,
+                                    timestamp: current_time,
+                                },
+                            );
+                    }
+                }
+                check_round_id += 1;
+                if check_round_id > current_round_id {
+                    break;
+                }
+            };
+
+            // Recalculate current round ID after potential draws
+            let time_elapsed_after = current_time - first_round_start_time;
+            current_round_id = (time_elapsed_after / ROUND_DURATION_SECONDS) + 1;
+
+            // Check if this round exists, if not create it
+            let mut current_round = self.rounds.read(current_round_id);
+            if current_round.id != current_round_id {
+                // Round doesn't exist, create it
+                let round_start_time = first_round_start_time + (current_round_id - 1) * ROUND_DURATION_SECONDS;
+                current_round = Round {
+                    id: current_round_id,
+                    start_time: round_start_time,
+                    end_time: round_start_time + ROUND_DURATION_SECONDS,
+                    prize_pool: 0,
+                    winning_number: 0,
+                    is_drawn: false,
+                };
+                self.rounds.write(current_round_id, current_round);
+                self.current_round_id.write(current_round_id);
+
+                self
+                    .emit(
+                        NewRoundStarted {
+                            round_id: current_round_id,
+                            start_time: round_start_time,
+                            timestamp: current_time,
+                        },
+                    );
             }
 
             // Check if user already has ticket for this round (after potential round update)
@@ -150,8 +221,9 @@ mod DailyLottery {
             self.participants.write((current_round_id, ticket_index), caller);
             self.participant_indices.write((current_round_id, caller), ticket_index);
 
-            // Update round info
-            current_round.prize_pool += TICKET_COST;
+            // Update round info - read fresh copy to avoid move issues
+            let mut round_to_update = self.rounds.read(current_round_id);
+            round_to_update.prize_pool += TICKET_COST;
 
             // Update ticket counts
             let total_tickets = self.total_tickets.read(current_round_id) + 1;
@@ -161,7 +233,7 @@ mod DailyLottery {
             let guess_count = self.correct_guesses.read((current_round_id, guess)) + 1;
             self.correct_guesses.write((current_round_id, guess), guess_count);
 
-            self.rounds.write(current_round_id, current_round);
+            self.rounds.write(current_round_id, round_to_update);
 
             self
                 .emit(
@@ -203,10 +275,27 @@ mod DailyLottery {
         }
 
         fn get_current_round_info(self: @ContractState) -> (u64, u64, u256, u64) {
-            let current_round_id = self.current_round_id.read();
-            let current_round = self.rounds.read(current_round_id);
-            let total_tickets = self.total_tickets.read(current_round_id);
-            (current_round_id, current_round.end_time, current_round.prize_pool, total_tickets)
+            let current_time = get_block_timestamp();
+            let first_round = self.rounds.read(1);
+            let first_round_start_time = first_round.start_time;
+
+            // Calculate current round ID based on time
+            let time_elapsed = current_time - first_round_start_time;
+            let current_round_id = (time_elapsed / ROUND_DURATION_SECONDS) + 1;
+
+            // Check if this round exists in storage
+            let stored_round = self.rounds.read(current_round_id);
+
+            if stored_round.id == current_round_id {
+                // Round exists, return real data
+                let total_tickets = self.total_tickets.read(current_round_id);
+                (current_round_id, stored_round.end_time, stored_round.prize_pool, total_tickets)
+            } else {
+                // Round doesn't exist, construct virtual round
+                let virtual_start_time = first_round_start_time + (current_round_id - 1) * ROUND_DURATION_SECONDS;
+                let virtual_end_time = virtual_start_time + ROUND_DURATION_SECONDS;
+                (current_round_id, virtual_end_time, 0, 0) // prize_pool=0, total_tickets=0 for virtual rounds
+            }
         }
 
         fn get_user_tickets(
@@ -251,41 +340,61 @@ mod DailyLottery {
 
         fn trigger_draw_if_expired(ref self: ContractState) {
             let current_time = get_block_timestamp();
-            let mut current_round_id = self.current_round_id.read();
-            let mut current_round = self.rounds.read(current_round_id);
 
-            if current_time >= current_round.end_time && !current_round.is_drawn {
-                // Draw the current expired round
-                let rollover = self.draw_winner(current_round_id);
+            // Calculate current round ID dynamically
+            let first_round = self.rounds.read(1);
+            let first_round_start_time = first_round.start_time;
+            let time_elapsed = current_time - first_round_start_time;
+            let current_round_id = (time_elapsed / ROUND_DURATION_SECONDS) + 1;
 
-                // Calculate how many rounds have passed to determine next round ID
-                let time_passed = current_time - current_round.end_time;
-                let full_rounds_passed = time_passed / ROUND_DURATION_SECONDS;
+            // Get the current round
+            let current_round = self.rounds.read(current_round_id);
 
-                // Start new round
-                let new_round_id = current_round_id + full_rounds_passed + 1;
-                let new_start_time = current_round.end_time
-                    + full_rounds_passed * ROUND_DURATION_SECONDS;
-                let new_round = Round {
-                    id: new_round_id,
-                    start_time: new_start_time,
-                    end_time: new_start_time + ROUND_DURATION_SECONDS,
-                    prize_pool: rollover, // Include rolled over prize pool
-                    winning_number: 0,
-                    is_drawn: false,
-                };
-                self.rounds.write(new_round_id, new_round);
-                self.current_round_id.write(new_round_id);
+            let (round_to_draw, rollover) = if current_round.id == current_round_id {
+                // Current round exists
+                if current_time >= current_round.end_time && !current_round.is_drawn {
+                    (current_round_id, self.draw_winner(current_round_id))
+                } else {
+                    return;
+                }
+            } else {
+                // Current round doesn't exist, check previous round
+                let prev_round_id = current_round_id - 1;
+                let prev_round = self.rounds.read(prev_round_id);
+                if prev_round.id == prev_round_id && current_time >= prev_round.end_time && !prev_round.is_drawn {
+                    (prev_round_id, self.draw_winner(prev_round_id))
+                } else {
+                    return;
+                }
+            };
 
-                self
-                    .emit(
-                        NewRoundStarted {
-                            round_id: new_round_id,
-                            start_time: new_start_time,
-                            timestamp: current_time,
-                        },
-                    );
-            }
+            // Calculate how many rounds have passed
+            let round_end_time = self.rounds.read(round_to_draw).end_time;
+            let time_passed = current_time - round_end_time;
+            let full_rounds_passed = time_passed / ROUND_DURATION_SECONDS;
+
+            // Start new round
+            let new_round_id = round_to_draw + full_rounds_passed + 1;
+            let new_start_time = round_end_time + full_rounds_passed * ROUND_DURATION_SECONDS;
+            let new_round = Round {
+                id: new_round_id,
+                start_time: new_start_time,
+                end_time: new_start_time + ROUND_DURATION_SECONDS,
+                prize_pool: rollover, // Include rolled over prize pool
+                winning_number: 0,
+                is_drawn: false,
+            };
+            self.rounds.write(new_round_id, new_round);
+            self.current_round_id.write(new_round_id);
+
+            self
+                .emit(
+                    NewRoundStarted {
+                        round_id: new_round_id,
+                        start_time: new_start_time,
+                        timestamp: current_time,
+                    },
+                );
         }
     }
 

@@ -15,6 +15,7 @@
 ## 🏗️ Architecture
 
 ### Smart Contract (Cairo)
+
 - **Location**: `projects/luck3/contract/`
 - **Framework**: Starknet Foundry (Scarb)
 - **Features**:
@@ -25,6 +26,7 @@
   - 10% platform fee distribution
 
 ### Frontend (React + TypeScript)
+
 - **Location**: `projects/luck3/frontend/`
 - **Tech Stack**:
   - React 19 with TypeScript
@@ -42,6 +44,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - pnpm package manager
 - Starknet wallet (ArgentX, Braavos, etc.)
@@ -50,24 +53,28 @@
 ### Installation & Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/hstarorg/starknet-lab.git
    cd projects/luck3
    ```
 
 2. **Install dependencies**
+
    ```bash
    cd frontend
    pnpm install
    ```
 
 3. **Configure environment**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Start development server**
+
    ```bash
    pnpm run dev
    ```
@@ -83,6 +90,7 @@
 4. **Claim Rewards**: If your number matches the winning number, claim your share!
 
 ### Game Rules
+
 - **Ticket Price**: 1 STRK per ticket
 - **Number Range**: 10-99 (inclusive)
 - **Round Duration**: 5 minutes
@@ -92,6 +100,7 @@
 ## 📋 Contract Deployment
 
 ### Prerequisites
+
 - Starkli CLI installed
 - Starknet account configured
 - STRK tokens for deployment
@@ -99,12 +108,14 @@
 ### Deploy Steps
 
 1. **Build the contract**
+
    ```bash
    cd contract
    scarb build
    ```
 
 2. **Declare the contract**
+
    ```bash
    source .env && starkli declare target/dev/luck3_DailyLottery.contract_class.json --network=sepolia
    ```
@@ -130,6 +141,7 @@ starkli invoke <CONTRACT_ADDRESS> claim_reward 1 --network=sepolia
 ## 🛠️ Development
 
 ### Frontend Development
+
 ```bash
 cd frontend
 pnpm run dev      # Start dev server
@@ -139,6 +151,7 @@ pnpm run lint     # Run ESLint
 ```
 
 ### Contract Development
+
 ```bash
 cd contract
 scarb build              # Build contract
@@ -148,6 +161,7 @@ snforge test            # Run integration tests
 ```
 
 ### Project Structure
+
 ```
 projects/luck3/
 ├── contract/                 # Cairo smart contract
@@ -170,6 +184,7 @@ projects/luck3/
 ## 🔧 Configuration
 
 ### Frontend Environment Variables
+
 ```env
 VITE_STARKNET_CHAIN=sepolia
 VITE_CONTRACT_ADDRESS=0x...
@@ -177,6 +192,7 @@ VITE_STRK_ADDRESS=0x...
 ```
 
 ### Contract Constants
+
 - **ROUND_DURATION**: 300 seconds (5 minutes)
 - **TICKET_COST**: 1 STRK (10^18 wei)
 - **GUESS_RANGE**: 10-99
@@ -197,6 +213,7 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 ## ⚠️ Disclaimer
 
 This is a demo application for educational purposes. Please be aware that:
+
 - Lottery games involve risk of loss
 - Smart contracts may contain bugs
 - Test on testnet before mainnet deployment
