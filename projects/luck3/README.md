@@ -1,6 +1,6 @@
-# Luck3 - Daily Lottery on Starknet
+# Luck3 - Lottery on Starknet
 
-🎰 **Luck3** is a decentralized daily lottery application built on the Starknet blockchain. Players can purchase lottery tickets by guessing numbers between 10-99, with each ticket costing 1 STRK token. Winners share the prize pool based on correct guesses, with all transactions and draws happening transparently on-chain.
+🎰 **Luck3** is a decentralized lottery application built on the Starknet blockchain. Players can purchase lottery tickets by guessing numbers between 10-99, with each ticket costing 1 STRK token. Winners share the prize pool based on correct guesses, with all transactions and draws happening transparently on-chain.
 
 ## 🌟 Features
 

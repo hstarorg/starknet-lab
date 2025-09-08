@@ -74,9 +74,23 @@ class LotteryService {
       roundId,
     ]);
     console.log('User ticket response:', res);
-    const [guess, isWinner] = Object.values(res) as [number, boolean];
 
-    if (guess === 0) return null; // No ticket
+    // Handle different possible response formats
+    let guess: number;
+    let isWinner: boolean;
+
+    if (Array.isArray(res)) {
+      [guess, isWinner] = res as [number, boolean];
+    } else {
+      const values = Object.values(res);
+      [guess, isWinner] = values as [number, boolean];
+    }
+
+    // Ensure guess is a number and check if user has no ticket
+    const guessNum = Number(guess);
+    if (isNaN(guessNum) || guessNum === 0 || guessNum < 0) {
+      return null; // No ticket purchased
+    }
 
     const reward = (await this._contractClient.call('get_user_reward', [
       userAddress,
@@ -85,7 +99,7 @@ class LotteryService {
 
     return {
       roundId,
-      guess: Number(guess),
+      guess: guessNum,
       isWinner,
       reward,
       claimed: false, // TODO: Check claimed status

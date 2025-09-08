@@ -106,18 +106,26 @@ export function RootLayout() {
               >
                 Lottery
               </Link>
-              <a
-                href="https://github.com/hstarorg/starknet-lab/tree/main/projects/luck3"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/history"
                 className="text-white/90 hover:text-white transition-colors font-medium drop-shadow-sm"
               >
-                GitHub
-              </a>
+                History
+              </Link>
             </div>
           </div>
-          <div className="backdrop-blur-sm bg-white/10 rounded-lg p-1">
-            <ConnectButton />
+          <div className="flex items-center space-x-4">
+            <a
+              href="https://github.com/hstarorg/starknet-lab/tree/main/projects/luck3"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/90 hover:text-white transition-colors font-medium drop-shadow-sm"
+            >
+              GitHub
+            </a>
+            <div className="backdrop-blur-sm bg-white/10 rounded-lg p-1">
+              <ConnectButton />
+            </div>
           </div>
         </div>
       </nav>

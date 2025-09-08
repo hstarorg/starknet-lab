@@ -1,6 +1,6 @@
 # Luck3 Frontend
 
-This directory contains the React frontend application for the Luck3 daily lottery dApp.
+This directory contains the React frontend application for the Luck3 lottery dApp.
 
 ## 🚀 Quick Start
 

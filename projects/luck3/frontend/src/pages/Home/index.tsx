@@ -80,7 +80,7 @@ export function Home() {
         <div className="text-center mb-16">
           <div className="inline-block bg-white/10 backdrop-blur-sm rounded-full px-6 py-2 mb-6">
             <span className="text-yellow-300 font-semibold text-sm uppercase tracking-wide">
-              🎰 LUCK3 Daily Lottery
+              🎰 LUCK3 Lottery
             </span>
           </div>
 
@@ -109,7 +109,7 @@ export function Home() {
               onClick={handleJoinLottery}
               className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg"
             >
-              🎯 Join Daily Lottery
+              🎯 Join Lottery
             </button>
             <div className="text-gray-400 text-sm">
               ⚡ Powered by Starknet • 100% On-Chain
