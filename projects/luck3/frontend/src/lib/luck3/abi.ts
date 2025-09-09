@@ -133,6 +133,45 @@ export const ABI = [
         "inputs": [],
         "outputs": [],
         "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "draw_rounds_up_to",
+        "inputs": [
+          {
+            "name": "target_round_id",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_statistics",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "(core::integer::u64, core::integer::u64, core::integer::u256)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_rounds_info",
+        "inputs": [
+          {
+            "name": "round_ids",
+            "type": "core::array::Array::<core::integer::u64>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Array::<(core::integer::u64, core::integer::u64, core::integer::u256, core::integer::u64, core::integer::u8, core::bool)>"
+          }
+        ],
+        "state_mutability": "view"
       }
     ]
   },
@@ -142,6 +181,10 @@ export const ABI = [
     "inputs": [
       {
         "name": "strk_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "fee_address",
         "type": "core::starknet::contract_address::ContractAddress"
       }
     ]

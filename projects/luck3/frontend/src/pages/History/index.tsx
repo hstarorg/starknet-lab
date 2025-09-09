@@ -1,17 +1,48 @@
 import { useStore } from '@/hooks';
 import { HistoryStore } from './HistoryStore';
+import {
+  Card,
+  Group,
+  Text,
+  Stack,
+  Badge,
+  LoadingOverlay,
+  Box,
+  Button,
+} from '@mantine/core';
+import {
+  TrophyIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  TicketIcon,
+} from '@heroicons/react/24/outline';
+import { formatSTRK } from '@/utils';
 
 export function History() {
   const { store, snapshot } = useStore(HistoryStore);
 
   const { rounds, loading, hasMore } = snapshot;
 
-  const formatRoundId = (id: bigint) => {
-    return `#${id.toString().padStart(4, '0')}`;
+  const formatDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) * 1000);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  const formatPrizePool = (amount: bigint) => {
-    return `${(Number(amount) / 1e18).toFixed(2)} STRK`;
+  const getRoundStatus = (round: any) => {
+    if (round.winningNumber && round.winningNumber > 0) {
+      return { status: 'completed', color: 'green', text: 'Completed' };
+    }
+    const now = Date.now() / 1000;
+    const endTime = Number(round.endTime);
+    if (now > endTime) {
+      return { status: 'drawing', color: 'orange', text: 'Drawing' };
+    }
+    return { status: 'active', color: 'blue', text: 'Active' };
   };
 
   return (
@@ -21,70 +52,235 @@ export function History() {
         <p className="text-white/70">View all completed lottery rounds</p>
       </div>
 
-      <div className="space-y-4">
-        {rounds.map((round) => (
-          <div
-            key={round.id.toString()}
-            className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-semibold text-white">
-                  {formatRoundId(round.id)}
-                </h3>
-                <p className="text-white/60 text-sm">Completed</p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-yellow-400">
-                  {round.winningNumber}
-                </div>
-                <p className="text-white/60 text-sm">Winning Number</p>
-              </div>
-            </div>
+      <Card withBorder shadow="sm" radius="md">
+        <Card.Section inheritPadding py="xs">
+          <Group justify="space-between">
+            <Text fw={500}>Historical Rounds</Text>
+            <Badge size="sm" variant="light" color="blue">
+              Completed Rounds
+            </Badge>
+          </Group>
+        </Card.Section>
+        <Card.Section p="md">
+          <LoadingOverlay visible={loading && rounds.length === 0} />
+          <Stack gap="md">
+            {rounds.length === 0 && !loading ? (
+              <Box py="xl" ta="center">
+                <TicketIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <Text c="dimmed" size="sm">
+                  No historical rounds available
+                </Text>
+              </Box>
+            ) : (
+              rounds.map((round) => {
+                const roundStatus = getRoundStatus(round);
+                return (
+                  <Card
+                    key={round.id.toString()}
+                    withBorder
+                    radius="sm"
+                    className="bg-gradient-to-r from-gray-50 to-white"
+                  >
+                    <Stack gap="sm">
+                      {/* Round Header */}
+                      <Group justify="space-between" align="center">
+                        <Group gap="xs">
+                          <TrophyIcon className="h-4 w-4 text-gray-600" />
+                          <Text size="sm" fw={600}>
+                            Round #{round.id.toString()}
+                          </Text>
+                        </Group>
+                        <Badge
+                          size="xs"
+                          color={roundStatus.color}
+                          variant="filled"
+                        >
+                          {roundStatus.text}
+                        </Badge>
+                      </Group>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-white/60">Prize Pool:</span>
-                <span className="text-white ml-2">
-                  {round.prizePool ? formatPrizePool(round.prizePool) : 'N/A'}
-                </span>
-              </div>
-              <div>
-                <span className="text-white/60">Winners:</span>
-                <span className="text-white ml-2">
-                  {round.winnerCount || 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+                      {/* Round Date */}
+                      <Group justify="space-between" align="center">
+                        <Group gap="xs">
+                          <ClockIcon className="h-3 w-3 text-gray-500" />
+                          <Text size="xs" c="dimmed">
+                            {round.endTime > 0n ? formatDate(round.endTime) : 'Date not available'}
+                          </Text>
+                        </Group>
+                      </Group>
 
-      {hasMore && (
-        <div className="text-center mt-8">
-          <button
-            onClick={() => store.loadMoreRounds()}
-            disabled={loading}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105"
-          >
-            {loading ? 'Loading...' : 'Load More Rounds'}
-          </button>
-        </div>
-      )}
+                      {/* Winning Number */}
+                      <Group justify="space-between" align="center">
+                        <Text size="xs" c="dimmed">
+                          Winning Number:
+                        </Text>
+                        <Box>
+                          {round.winningNumber && round.winningNumber > 0 ? (
+                            <Badge
+                              size="lg"
+                              color="green"
+                              variant="filled"
+                              className="font-bold text-lg px-3 py-1"
+                            >
+                              {round.winningNumber}
+                            </Badge>
+                          ) : (
+                            <Badge size="sm" color="gray" variant="light">
+                              Pending
+                            </Badge>
+                          )}
+                        </Box>
+                      </Group>
 
-      {!hasMore && rounds.length > 0 && (
-        <div className="text-center mt-8 text-white/60">
-          No more rounds to load
-        </div>
-      )}
+                      {/* Prize Pool */}
+                      <Group justify="space-between" align="center">
+                        <Group gap="xs">
+                          <CurrencyDollarIcon className="h-3 w-3 text-gray-500" />
+                          <Text size="xs" c="dimmed">
+                            Prize Pool:
+                          </Text>
+                        </Group>
+                        <Stack gap="xs" align="end">
+                          {round.prizePool > 0n ? (
+                            <>
+                              <Text size="sm" fw={600} c="green">
+                                {formatSTRK(round.prizePool)}
+                              </Text>
+                              {round.userTicket && (
+                                <Text size="xs" c="dimmed">
+                                  Your contribution
+                                </Text>
+                              )}
+                            </>
+                          ) : (
+                            <Text size="xs" c="dimmed">
+                              Data not available
+                            </Text>
+                          )}
+                        </Stack>
+                      </Group>
 
-      {rounds.length === 0 && !loading && (
-        <div className="text-center mt-16">
-          <p className="text-white/60 text-lg">
-            No lottery history available yet
-          </p>
-        </div>
-      )}
+                      {/* User's Bet */}
+                      <Group justify="space-between" align="center">
+                        <Text size="xs" c="dimmed">
+                          Your Bet:
+                        </Text>
+                        {round.userTicket ? (
+                          <Group gap="xs">
+                            <Badge
+                              size="sm"
+                              color={round.userTicket.isWinner ? 'green' : 'blue'}
+                              variant="light"
+                            >
+                              {round.userTicket.guess}
+                            </Badge>
+                            {round.userTicket.isWinner && (
+                              <Badge
+                                size="xs"
+                                color="green"
+                                variant="filled"
+                                leftSection={<TrophyIcon className="h-3 w-3" />}
+                              >
+                                Winner!
+                              </Badge>
+                            )}
+                          </Group>
+                        ) : (
+                          <Text size="xs" c="dimmed">
+                            -
+                          </Text>
+                        )}
+                      </Group>
+
+                      {/* Reward Info */}
+                      {round.userTicket?.isWinner &&
+                        round.userTicket.reward > 0n && (
+                          <Group
+                            justify="space-between"
+                            align="center"
+                            className="bg-green-50 p-2 rounded"
+                          >
+                            <Text size="xs" c="green" fw={500}>
+                              Your Reward:
+                            </Text>
+                            <Badge
+                              size="sm"
+                              color="green"
+                              variant="filled"
+                              leftSection={
+                                <CurrencyDollarIcon className="h-3 w-3" />
+                              }
+                            >
+                              {formatSTRK(round.userTicket.reward)}
+                            </Badge>
+                          </Group>
+                        )}
+
+                      {/* Action Buttons */}
+                      <Group justify="space-between" align="center">
+                        <Text size="xs" c="dimmed">
+                          Actions:
+                        </Text>
+                        <Group gap="xs">
+                          {roundStatus.status === 'drawing' && (
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="orange"
+                              onClick={() => {
+                                // TODO: Implement draw trigger
+                                console.log('Trigger draw for round', round.id);
+                              }}
+                            >
+                              Trigger Draw
+                            </Button>
+                          )}
+                          {round.userTicket?.isWinner &&
+                            round.userTicket.reward > 0n && (
+                              <Button
+                                size="xs"
+                                variant="filled"
+                                color="green"
+                                onClick={() => {
+                                  // TODO: Implement reward claiming
+                                  console.log('Claim reward for round', round.id);
+                                }}
+                              >
+                                Claim Reward
+                              </Button>
+                            )}
+                        </Group>
+                      </Group>
+                    </Stack>
+                  </Card>
+                );
+              })
+            )}
+          </Stack>
+
+          {hasMore && rounds.length > 0 && (
+            <Box ta="center" mt="md">
+              <Button
+                onClick={() => store.loadMoreRounds()}
+                loading={loading}
+                variant="light"
+                color="blue"
+                size="md"
+              >
+                Load More Rounds
+              </Button>
+            </Box>
+          )}
+
+          {!hasMore && rounds.length > 0 && (
+            <Box ta="center" mt="md">
+              <Text c="dimmed" size="sm">
+                No more rounds to load
+              </Text>
+            </Box>
+          )}
+        </Card.Section>
+      </Card>
     </div>
   );
 }

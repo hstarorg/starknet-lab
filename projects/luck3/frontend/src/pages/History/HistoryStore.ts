@@ -1,10 +1,12 @@
 import { proxy } from 'valtio';
 import { lotteryService } from '@/services/lottery.service';
-import type { LotteryRound } from '@/types/lottery.type';
+import type { LotteryRound, UserTicket } from '@/types/lottery.type';
 
 export interface HistoryRound extends LotteryRound {
   winnerCount?: number;
   rewardPerWinner?: bigint;
+  userTicket?: UserTicket | null;
+  endTime: bigint;
 }
 
 type ViewModel = {
@@ -26,6 +28,11 @@ export class HistoryStore {
   onMounted() {
     console.log('HistoryStore mounted');
     this.loadMoreRounds();
+  }
+
+  onUnMounted() {
+    // Cleanup if needed
+    console.log('HistoryStore unmounted');
   }
 
   async loadMoreRounds() {

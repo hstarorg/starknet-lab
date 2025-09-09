@@ -10,15 +10,24 @@ export function Home() {
   const navigate = useNavigate();
   const { snapshot } = useStore(HomeStore);
 
-  // 模拟实时数据（实际项目中可以从合约获取）
+  // 实时数据从合约获取
   const stats = {
     currentPrizePool: Number(
       numberDiv(String(snapshot.currentRound?.prizePool || 0), 10 ** 18)
     ),
-    totalTicketsToday: snapshot.currentRound?.totalTickets || 0,
+    totalTicketsToday: Number(snapshot.currentRound?.totalTickets || 0),
     participantsToday: Number(snapshot.currentRound?.totalTickets || 0),
-    totalRounds: snapshot.currentRound?.roundId || 0,
+    totalRounds: Number(snapshot.currentRound?.roundId || 0),
     endTime: snapshot.currentRound?.endTime,
+  };
+
+  // 全局统计数据
+  const globalStats = {
+    totalRounds: Number(snapshot.statistics?.totalRounds || 0),
+    totalParticipants: Number(snapshot.statistics?.totalParticipants || 0),
+    totalPrizePool: Number(
+      numberDiv(String(snapshot.statistics?.totalPrizePool || 0), 10 ** 18)
+    ),
   };
 
   const handleJoinLottery = () => {
@@ -118,7 +127,11 @@ export function Home() {
         </div>
 
         {/* 实时统计 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">Live Statistics</h2>
+          <p className="text-gray-400">Current round information updated in real-time</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">⏰</div>
             <div className="text-2xl font-bold text-white mb-1">
@@ -149,6 +162,37 @@ export function Home() {
               {stats.participantsToday.toLocaleString()}
             </div>
             <div className="text-gray-400 text-sm">Participants</div>
+          </div>
+        </div>
+
+        {/* 全局统计 */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">Global Statistics</h2>
+          <p className="text-gray-400">All-time lottery statistics across all rounds</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+            <div className="text-3xl mb-2">🏆</div>
+            <div className="text-2xl font-bold text-yellow-400 mb-1">
+              {globalStats.totalRounds.toLocaleString()}
+            </div>
+            <div className="text-gray-400 text-sm">Total Rounds</div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+            <div className="text-3xl mb-2">🌍</div>
+            <div className="text-2xl font-bold text-cyan-400 mb-1">
+              {globalStats.totalParticipants.toLocaleString()}
+            </div>
+            <div className="text-gray-400 text-sm">Total Participants</div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+            <div className="text-3xl mb-2">💎</div>
+            <div className="text-2xl font-bold text-pink-400 mb-1">
+              {globalStats.totalPrizePool.toLocaleString()}
+            </div>
+            <div className="text-gray-400 text-sm">Total STRK Distributed</div>
           </div>
         </div>
 

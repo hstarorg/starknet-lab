@@ -7,8 +7,8 @@ import {
   type ArgsOrCalldata,
   type TypedContractV2,
   type InvokeOptions,
-  Account,
   type Call,
+  type BigNumberish,
 } from 'starknet';
 import type { ExtractAbiFunctionNames, FunctionArgs } from './kanabi';
 
@@ -53,5 +53,9 @@ export abstract class ContractClientBase<TAbi extends Abi> {
     const multiCall = await account.execute(calls);
     console.log('MultiCall transaction hash:', multiCall.transaction_hash);
     return await this.provider.waitForTransaction(multiCall.transaction_hash);
+  }
+
+  async waitForTransaction(txHash: BigNumberish) {
+    return await this.provider.waitForTransaction(txHash, {});
   }
 }

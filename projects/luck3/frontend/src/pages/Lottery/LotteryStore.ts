@@ -126,39 +126,41 @@ export class LotteryStore {
       // Get current round info first
       const currentRound = await lotteryService.getCurrentRoundInfo();
 
-      // Fetch last 3 rounds (current - 1, current - 2, current - 3)
+      // Prepare round IDs for batch query (current - 1, current - 2)
+      const roundIds: bigint[] = [];
       for (let i = 1; i <= 2; i++) {
         const roundId = currentRound.roundId - BigInt(i);
-        if (roundId <= 0n) break;
-
-        try {
-          // Get round winning number
-          const winningNumber = await lotteryService.getRoundWinningNumber(
-            roundId
-          );
-
-          // Get user's ticket for this round
-          const userTicket = await lotteryService.getUserTicket(
-            this.account.address,
-            roundId
-          );
-
-          // For historical rounds, we can't get the exact prize pool from contract
-          // So we estimate it as: ticket count × 1 STRK (since each ticket costs 1 STRK)
-          // This is an approximation since we don't have the exact ticket count for historical rounds
-          const estimatedPrizePool = userTicket ? 1000000000000000000n : 0n; // 1 STRK if user had ticket
-
-          recentRounds.push({
-            roundId,
-            endTime: currentRound.endTime - BigInt(i * 24 * 60 * 60), // Approximate end time
-            prizePool: estimatedPrizePool,
-            winningNumber: winningNumber || undefined,
-            userTicket,
-          });
-        } catch (error) {
-          console.error(`Failed to fetch round ${roundId}:`, error);
+        if (roundId > 0n) {
+          roundIds.push(roundId);
         }
       }
+
+      if (roundIds.length === 0) {
+        this.state.recentRounds = [];
+        return;
+      }
+
+      // Use contract batch method to get rounds info
+      const roundsInfo = await lotteryService.getRoundsInfoBatch(roundIds);
+
+      // Get user tickets for these rounds
+      const userTickets = await lotteryService.getUserTicketsBatch(
+        this.account.address,
+        roundIds
+      );
+
+      // Build recent rounds data
+      roundsInfo.forEach((roundInfo, index) => {
+        const userTicket = userTickets[index];
+
+        recentRounds.push({
+          roundId: roundInfo.roundId,
+          endTime: roundInfo.endTime,
+          prizePool: roundInfo.prizePool,
+          winningNumber: roundInfo.winningNumber || undefined,
+          userTicket,
+        });
+      });
 
       this.state.recentRounds = recentRounds;
     } finally {
@@ -208,6 +210,24 @@ export class LotteryStore {
         color: 'red',
       });
       console.error('Claim reward error:', error);
+    }
+  };
+
+  handleTriggerDraw = async (roundId: bigint) => {
+    try {
+      const txHash = await lotteryService.drawRoundsUpTo(roundId, this.account);
+      console.log('Draw transaction hash:', txHash);
+      notifications.show({
+        message: 'Draw triggered successfully! Refreshing data...',
+        color: 'green',
+      });
+      await this.fetchRecentRounds();
+    } catch (error) {
+      notifications.show({
+        message: 'Failed to trigger draw. Please try again.',
+        color: 'red',
+      });
+      console.error('Trigger draw error:', error);
     }
   };
 }

@@ -90,6 +90,7 @@ export function Lottery() {
           <RecentLottery
             recentRoundsLoading={snapshot.recentRoundsLoading}
             recentRounds={snapshot.recentRounds}
+            onTriggerDraw={store.handleTriggerDraw}
           />
         </div>
       </div>

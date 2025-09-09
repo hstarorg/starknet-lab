@@ -13,4 +13,8 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
   async getCurrentRoundInfo() {
     return await this.contract.get_current_round_info();
   }
+
+  async getRoundsInfo(roundIds: bigint[]) {
+    return await this.contract.get_rounds_info(roundIds);
+  }
 }

@@ -1,20 +1,37 @@
-import { Card, Group, Text, Stack, Badge, LoadingOverlay, Box } from '@mantine/core';
-import { TrophyIcon, ClockIcon, CurrencyDollarIcon, TicketIcon } from '@heroicons/react/24/outline';
-import { useStore } from '@/hooks';
-import { LotteryStore } from '../LotteryStore';
+import {
+  Card,
+  Group,
+  Text,
+  Stack,
+  Badge,
+  LoadingOverlay,
+  Box,
+  Button,
+} from '@mantine/core';
+import {
+  TrophyIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  TicketIcon,
+  PlayIcon,
+} from '@heroicons/react/24/outline';
 import { formatSTRK } from '@/utils';
+import type { RecentRoundInfo } from '../LotteryStore';
 
-export function RecentLottery() {
-  const { snapshot } = useStore(LotteryStore);
-  const { recentRounds, recentRoundsLoading } = snapshot;
+type RecentLotteryProps = {
+  recentRounds: readonly RecentRoundInfo[];
+  recentRoundsLoading?: boolean;
+  onTriggerDraw: (roundId: bigint) => void;
+};
 
+export function RecentLottery(props: RecentLotteryProps) {
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) * 1000);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -25,7 +42,13 @@ export function RecentLottery() {
     const now = Date.now() / 1000;
     const endTime = Number(round.endTime);
     if (now > endTime) {
-      return { status: 'drawing', color: 'orange', text: 'Drawing' };
+      // Check if round has participants (prize pool > 0 indicates participants)
+      const hasParticipants = round.prizePool > 0n;
+      if (hasParticipants) {
+        return { status: 'drawing', color: 'orange', text: 'Drawing' };
+      } else {
+        return { status: 'expired', color: 'gray', text: 'Expired' };
+      }
     }
     return { status: 'active', color: 'blue', text: 'Active' };
   };
@@ -36,14 +59,14 @@ export function RecentLottery() {
         <Group justify="space-between">
           <Text fw={500}>Recent Rounds</Text>
           <Badge size="sm" variant="light" color="blue">
-            Last 3
+            Last 2
           </Badge>
         </Group>
       </Card.Section>
       <Card.Section p="md">
-        <LoadingOverlay visible={recentRoundsLoading} />
+        <LoadingOverlay visible={props.recentRoundsLoading} />
         <Stack gap="md">
-          {recentRounds.length === 0 && !recentRoundsLoading ? (
+          {props.recentRounds.length === 0 && !props.recentRoundsLoading ? (
             <Box py="xl" ta="center">
               <TicketIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <Text c="dimmed" size="sm">
@@ -51,10 +74,15 @@ export function RecentLottery() {
               </Text>
             </Box>
           ) : (
-            recentRounds.map((round, index) => {
+            props.recentRounds.map((round) => {
               const roundStatus = getRoundStatus(round);
               return (
-                <Card key={round.roundId.toString()} withBorder radius="sm" className="bg-gradient-to-r from-gray-50 to-white">
+                <Card
+                  key={round.roundId.toString()}
+                  withBorder
+                  radius="sm"
+                  className="bg-gradient-to-r from-gray-50 to-white"
+                >
                   <Stack gap="sm">
                     {/* Round Header */}
                     <Group justify="space-between" align="center">
@@ -64,13 +92,26 @@ export function RecentLottery() {
                           Round #{round.roundId.toString()}
                         </Text>
                       </Group>
-                      <Badge
-                        size="xs"
-                        color={roundStatus.color}
-                        variant="filled"
-                      >
-                        {roundStatus.text}
-                      </Badge>
+                      <Group gap="xs">
+                        {roundStatus.status === 'drawing' && (
+                          <Button
+                            size="xs"
+                            variant="light"
+                            color="orange"
+                            leftSection={<PlayIcon className="h-3 w-3" />}
+                            onClick={() => props.onTriggerDraw(round.roundId)}
+                          >
+                            Draw
+                          </Button>
+                        )}
+                        <Badge
+                          size="xs"
+                          color={roundStatus.color}
+                          variant="filled"
+                        >
+                          {roundStatus.text}
+                        </Badge>
+                      </Group>
                     </Group>
 
                     {/* Round Date */}
@@ -85,7 +126,9 @@ export function RecentLottery() {
 
                     {/* Winning Number */}
                     <Group justify="space-between" align="center">
-                      <Text size="xs" c="dimmed">Winning Number:</Text>
+                      <Text size="xs" c="dimmed">
+                        Winning Number:
+                      </Text>
                       <Box>
                         {round.winningNumber ? (
                           <Badge
@@ -97,11 +140,7 @@ export function RecentLottery() {
                             {round.winningNumber}
                           </Badge>
                         ) : (
-                          <Badge
-                            size="sm"
-                            color="gray"
-                            variant="light"
-                          >
+                          <Badge size="sm" color="gray" variant="light">
                             Pending
                           </Badge>
                         )}
@@ -109,33 +148,43 @@ export function RecentLottery() {
                     </Group>
 
                     {/* Prize Pool */}
-                    {round.prizePool > 0n && (
-                      <Group justify="space-between" align="center">
-                        <Group gap="xs">
-                          <CurrencyDollarIcon className="h-3 w-3 text-gray-500" />
-                          <Text size="xs" c="dimmed">Prize Pool:</Text>
-                        </Group>
-                        <Stack gap="xs" align="end">
-                          <Text size="sm" fw={600} c="green">
-                            {formatSTRK(round.prizePool)}
-                          </Text>
-                          {roundStatus.status === 'completed' && (
-                            <Text size="xs" c="dimmed">
-                              From ticket sales
-                            </Text>
-                          )}
-                        </Stack>
+                    <Group justify="space-between" align="center">
+                      <Group gap="xs">
+                        <CurrencyDollarIcon className="h-3 w-3 text-gray-500" />
+                        <Text size="xs" c="dimmed">
+                          Prize Pool:
+                        </Text>
                       </Group>
-                    )}
+                      <Stack gap="xs" align="end">
+                        {round.prizePool > 0n ? (
+                          <>
+                            <Text size="sm" fw={600} c="green">
+                              {formatSTRK(round.prizePool)}
+                            </Text>
+                            {round.userTicket && (
+                              <Text size="xs" c="dimmed">
+                                Your contribution
+                              </Text>
+                            )}
+                          </>
+                        ) : (
+                          <Text size="xs" c="dimmed">
+                            Data not available
+                          </Text>
+                        )}
+                      </Stack>
+                    </Group>
 
                     {/* User's Bet */}
                     <Group justify="space-between" align="center">
-                      <Text size="xs" c="dimmed">Your Bet:</Text>
+                      <Text size="xs" c="dimmed">
+                        Your Bet:
+                      </Text>
                       {round.userTicket ? (
                         <Group gap="xs">
                           <Badge
                             size="sm"
-                            color={round.userTicket.isWinner ? "green" : "blue"}
+                            color={round.userTicket.isWinner ? 'green' : 'blue'}
                             variant="light"
                           >
                             {round.userTicket.guess}
@@ -152,24 +201,35 @@ export function RecentLottery() {
                           )}
                         </Group>
                       ) : (
-                        <Text size="xs" c="dimmed">-</Text>
+                        <Text size="xs" c="dimmed">
+                          -
+                        </Text>
                       )}
                     </Group>
 
                     {/* Reward Info */}
-                    {round.userTicket?.isWinner && round.userTicket.reward > 0n && (
-                      <Group justify="space-between" align="center" className="bg-green-50 p-2 rounded">
-                        <Text size="xs" c="green" fw={500}>Your Reward:</Text>
-                        <Badge
-                          size="sm"
-                          color="green"
-                          variant="filled"
-                          leftSection={<CurrencyDollarIcon className="h-3 w-3" />}
+                    {round.userTicket?.isWinner &&
+                      round.userTicket.reward > 0n && (
+                        <Group
+                          justify="space-between"
+                          align="center"
+                          className="bg-green-50 p-2 rounded"
                         >
-                          {formatSTRK(round.userTicket.reward)}
-                        </Badge>
-                      </Group>
-                    )}
+                          <Text size="xs" c="green" fw={500}>
+                            Your Reward:
+                          </Text>
+                          <Badge
+                            size="sm"
+                            color="green"
+                            variant="filled"
+                            leftSection={
+                              <CurrencyDollarIcon className="h-3 w-3" />
+                            }
+                          >
+                            {formatSTRK(round.userTicket.reward)}
+                          </Badge>
+                        </Group>
+                      )}
                   </Stack>
                 </Card>
               );

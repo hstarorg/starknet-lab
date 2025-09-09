@@ -48,6 +48,30 @@ class LotteryService {
   }
 
   /**
+   * Get global statistics
+   */
+  async getStatistics(): Promise<{
+    totalRounds: bigint;
+    totalParticipants: bigint;
+    totalPrizePool: bigint;
+  }> {
+    try {
+      const res = await this._contractClient.call('get_statistics');
+      const [totalRounds, totalParticipants, totalPrizePool] = Object.values(
+        res
+      ) as any;
+
+      return {
+        totalRounds,
+        totalParticipants,
+        totalPrizePool,
+      };
+    } catch (error) {
+      throw this.handleContractError('Failed to get statistics', error);
+    }
+  }
+
+  /**
    * Check if user has sufficient STRK balance
    */
   private async _checkStrkBalance(userAddress: string): Promise<bigint> {
@@ -123,6 +147,74 @@ class LotteryService {
   }
 
   /**
+   * Get winning numbers for multiple rounds in batch
+   */
+  async getRoundsWinningNumbers(
+    roundIds: bigint[]
+  ): Promise<(number | null)[]> {
+    const promises = roundIds.map((roundId) =>
+      this.getRoundWinningNumber(roundId)
+    );
+    return Promise.all(promises);
+  }
+
+  /**
+   * Get user tickets for multiple rounds in batch
+   */
+  async getUserTicketsBatch(
+    userAddress: string,
+    roundIds: bigint[]
+  ): Promise<(UserTicket | null)[]> {
+    const promises = roundIds.map((roundId) =>
+      this.getUserTicket(userAddress, roundId)
+    );
+    return Promise.all(promises);
+  }
+
+  /**
+   * Get rounds information in batch using contract method
+   */
+  async getRoundsInfoBatch(roundIds: bigint[]): Promise<
+    {
+      roundId: bigint;
+      endTime: bigint;
+      prizePool: bigint;
+      totalTickets: bigint;
+      winningNumber: number | null;
+      isDrawn: boolean;
+    }[]
+  > {
+    try {
+      const roundsInfo = await this._contractClient.getRoundsInfo(roundIds);
+
+      return roundsInfo.map((roundInfo: any) => {
+        const [
+          roundId,
+          endTime,
+          prizePool,
+          totalTickets,
+          winningNumber,
+          isDrawn,
+        ] = Object.values(roundInfo) as any[];
+
+        return {
+          roundId: BigInt(roundId), // Convert to bigint
+          endTime: BigInt(endTime),
+          prizePool: BigInt(prizePool),
+          totalTickets: BigInt(totalTickets),
+          winningNumber: isDrawn ? Number(winningNumber) : null,
+          isDrawn: Boolean(isDrawn),
+        };
+      });
+    } catch (error) {
+      throw this.handleContractError(
+        'Failed to get rounds info in batch',
+        error
+      );
+    }
+  }
+
+  /**
    * Buy a lottery ticket with automatic approval handling
    */
   async buyTicket(
@@ -189,19 +281,22 @@ class LotteryService {
   }
 
   /**
-   * Trigger draw if round has expired
+   * Draw rounds up to specified round ID
    */
-  async triggerDrawIfExpired(account: any): Promise<string | null> {
+  async drawRoundsUpTo(roundId: bigint, account: any): Promise<string> {
     try {
       const tx = await this._contractClient.invoke(
         account,
-        'trigger_draw_if_expired'
+        'draw_rounds_up_to',
+        [roundId]
       );
+      await this._contractClient.waitForTransaction(tx.transaction_hash);
       return tx.transaction_hash;
     } catch (error) {
-      // Round not expired or already drawn
-      console.error('Failed to trigger draw:', error);
-      return null;
+      throw this.handleContractError(
+        'Failed to draw rounds up to specified round',
+        error
+      );
     }
   }
 

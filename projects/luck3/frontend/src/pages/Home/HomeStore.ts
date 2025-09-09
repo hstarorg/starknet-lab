@@ -6,6 +6,11 @@ import { proxy } from 'valtio';
 type ViewModel = {
   currentRound?: CurrentRoundInfo;
   timeRemaining?: string;
+  statistics?: {
+    totalRounds: bigint;
+    totalParticipants: bigint;
+    totalPrizePool: bigint;
+  };
 };
 export class HomeStore {
   state = proxy<ViewModel>({});
@@ -26,8 +31,23 @@ export class HomeStore {
   }
 
   async loadData() {
-    const round = await lotteryService.getCurrentRoundInfo();
-    this.state.currentRound = round;
+    try {
+      const [round, statistics] = await Promise.all([
+        lotteryService.getCurrentRoundInfo(),
+        lotteryService.getStatistics(),
+      ]);
+      this.state.currentRound = round;
+      this.state.statistics = statistics;
+    } catch (error) {
+      console.error('Failed to load home data:', error);
+      // Still try to load current round info even if statistics fail
+      try {
+        const round = await lotteryService.getCurrentRoundInfo();
+        this.state.currentRound = round;
+      } catch (roundError) {
+        console.error('Failed to load current round info:', roundError);
+      }
+    }
   }
 
   private _updateTimeRemaining() {

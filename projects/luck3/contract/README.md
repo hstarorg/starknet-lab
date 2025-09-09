@@ -58,7 +58,7 @@ scarb fmt
    Example:
 
    ```bash
-   starkli deploy 0x07e59af4b19a69e794bf8c33854506e76b3ae5e5ff4b6f1a142d174b0c49673e 0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D 0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0 --network=sepolia
+   starkli deploy 0x00110860772a602217e4f90304e60fd66c7a2e7729a921ab9b8f510beb720e94 0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D 0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0 --network=sepolia
    ```
 
 ## 🔗 Contract Interaction
@@ -109,10 +109,16 @@ starkli class-at <CONTRACT_ADDRESS> --network=sepolia | pnpx abi-wan-kanabi --in
 Example:
 
 ```bash
-starkli class-at "0x061bfe2f84e7c8c5c1b35bd8aa6e1135b5a0554f1aedf051e222c1bf3548e321" --network=sepolia | pnpx abi-wan-kanabi --input /dev/stdin --output abi.ts
+starkli class-at "0x04c97a706683dbf0f0d7738f78d6cc9422b73e16f1005ceb1e52f8d639ad4e82" --network=sepolia | pnpx abi-wan-kanabi --input /dev/stdin --output abi.ts
 ```
 
 ## 📋 Recent Deployments
+
+### Deployment (2025-09-09 22:21)
+
+- **Contract Address**: `0x04c97a706683dbf0f0d7738f78d6cc9422b73e16f1005ceb1e52f8d639ad4e82`
+- **Class Hash**: `0x00110860772a602217e4f90304e60fd66c7a2e7729a921ab9b8f510beb720e94`
+- **Network**: Sepolia Testnet
 
 ### Deployment (2025-09-08 23:46)
 
