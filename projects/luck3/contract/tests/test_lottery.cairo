@@ -65,6 +65,17 @@ fn setup_user(
     stop_cheat_caller_address(strk_dispatcher.contract_address);
 }
 
+fn advance_to_next_round(lottery_dispatcher: IDailyLotteryDispatcher) {
+    let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
+    start_cheat_block_timestamp(lottery_dispatcher.contract_address, end_time + 1);
+}
+
+fn advance_rounds(lottery_dispatcher: IDailyLotteryDispatcher, rounds: u64) {
+    let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
+    let advance_time = rounds * ROUND_DURATION_SECONDS;
+    start_cheat_block_timestamp(lottery_dispatcher.contract_address, end_time + advance_time + 1);
+}
+
 #[test]
 fn test_buy_ticket_invalid_guess_low() {
     let (lottery_dispatcher, lottery_address, _, strk_dispatcher, _, _) = setup_test();
@@ -197,13 +208,13 @@ fn test_trigger_draw_if_expired() {
 }
 
 #[test]
+#[should_panic(expected: ('Round not drawn yet',))]
 fn test_get_winning_number_before_draw() {
     let (lottery_dispatcher, _, _, _, _, _) = setup_test();
 
-    // Check that round 1 exists but is not drawn
-    let (_, _, _, _) = lottery_dispatcher.get_current_round_info();
-    // Since we haven't drawn round 1 yet, this test passes by not calling the function that would panic
-    assert(true, 'Round 1 not drawn yet');
+    // Try to get winning number for round 1 before it's drawn
+    // This should panic with "Round not drawn yet"
+    lottery_dispatcher.get_round_winning_number(1);
 }
 
 #[test]
@@ -601,6 +612,129 @@ fn test_round_id_continuity() {
 
     let (round_id2, _, _, _) = lottery_dispatcher.get_current_round_info();
     assert(round_id2 == 2, 'Next round should be 2');
+
+    stop_cheat_block_timestamp(lottery_address);
+}
+
+#[test]
+fn test_get_statistics() {
+    let (lottery_dispatcher, lottery_address, _, strk_dispatcher, _, _) = setup_test();
+
+    let user1: ContractAddress = 111111.try_into().unwrap();
+    let user2: ContractAddress = 222222.try_into().unwrap();
+
+    setup_user(strk_dispatcher, lottery_address, user1, 10000000000000000000);
+    setup_user(strk_dispatcher, lottery_address, user2, 10000000000000000000);
+
+    // Initial statistics
+    let (total_rounds1, total_participants1, total_prize_pool1) = lottery_dispatcher.get_statistics();
+    assert(total_rounds1 == 1, 'Should have 1 round initially');
+    assert(total_participants1 == 0, 'Should have 0 participants');
+    assert(total_prize_pool1 == 0, 'Should have 0 prize pool');
+
+    // User1 buys ticket
+    start_cheat_caller_address(lottery_address, user1);
+    lottery_dispatcher.buy_ticket(42);
+    stop_cheat_caller_address(lottery_address);
+
+    let (total_rounds2, total_participants2, total_prize_pool2) = lottery_dispatcher.get_statistics();
+    assert(total_rounds2 == 1, 'Should still have 1 round');
+    assert(total_participants2 == 1, 'Should have 1 participant');
+    assert(total_prize_pool2 == 1000000000000000000, 'Should have 1 STRK prize pool');
+
+    // User2 buys ticket
+    start_cheat_caller_address(lottery_address, user2);
+    lottery_dispatcher.buy_ticket(50);
+    stop_cheat_caller_address(lottery_address);
+
+    let (total_rounds3, total_participants3, total_prize_pool3) = lottery_dispatcher.get_statistics();
+    assert(total_rounds3 == 1, 'Should still have 1 round');
+    assert(total_participants3 == 2, 'Should have 2 participants');
+    assert(total_prize_pool3 == 2000000000000000000, 'Should have 2 STRK prize pool');
+
+    // Advance to next round
+    let (_, end_time, _, _) = lottery_dispatcher.get_current_round_info();
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
+
+    // User1 buys ticket in new round
+    start_cheat_caller_address(lottery_address, user1);
+    lottery_dispatcher.buy_ticket(25);
+    stop_cheat_caller_address(lottery_address);
+
+    let (total_rounds4, total_participants4, total_prize_pool4) = lottery_dispatcher.get_statistics();
+    assert(total_rounds4 == 2, 'Should have 2 rounds');
+    assert(total_participants4 == 2, 'Should have 2 participants');
+    assert(total_prize_pool4 == 3000000000000000000, 'Should have 3 STRK prize pool');
+
+    stop_cheat_block_timestamp(lottery_address);
+}
+
+
+
+#[test]
+fn test_statistics_with_multiple_users_multiple_rounds() {
+    let (lottery_dispatcher, lottery_address, _, strk_dispatcher, _, _) = setup_test();
+
+    let user1: ContractAddress = 111111.try_into().unwrap();
+    let user2: ContractAddress = 222222.try_into().unwrap();
+    let user3: ContractAddress = 333333.try_into().unwrap();
+
+    setup_user(strk_dispatcher, lottery_address, user1, 20000000000000000000);
+    setup_user(strk_dispatcher, lottery_address, user2, 20000000000000000000);
+    setup_user(strk_dispatcher, lottery_address, user3, 20000000000000000000);
+
+    // Round 1: All users participate
+    start_cheat_caller_address(lottery_address, user1);
+    lottery_dispatcher.buy_ticket(42);
+    stop_cheat_caller_address(lottery_address);
+
+    start_cheat_caller_address(lottery_address, user2);
+    lottery_dispatcher.buy_ticket(50);
+    stop_cheat_caller_address(lottery_address);
+
+    start_cheat_caller_address(lottery_address, user3);
+    lottery_dispatcher.buy_ticket(42); // Same as user1
+    stop_cheat_caller_address(lottery_address);
+
+    // Check statistics after round 1
+    let (total_rounds1, total_participants1, total_prize_pool1) = lottery_dispatcher.get_statistics();
+    assert(total_rounds1 == 1, 'Should have 1 round');
+    assert(total_participants1 == 3, 'Should have 3 participants');
+    assert(total_prize_pool1 == 3000000000000000000, 'Should have 3 STRK prize pool');
+
+    // Advance to round 2
+    let (_, end_time1, _, _) = lottery_dispatcher.get_current_round_info();
+    start_cheat_block_timestamp(lottery_address, end_time1 + 1);
+
+    // Round 2: Only user1 and user2 participate
+    start_cheat_caller_address(lottery_address, user1);
+    lottery_dispatcher.buy_ticket(25);
+    stop_cheat_caller_address(lottery_address);
+
+    start_cheat_caller_address(lottery_address, user2);
+    lottery_dispatcher.buy_ticket(75);
+    stop_cheat_caller_address(lottery_address);
+
+    // Check statistics after round 2
+    let (total_rounds2, total_participants2, total_prize_pool2) = lottery_dispatcher.get_statistics();
+    assert(total_rounds2 == 2, 'Should have 2 rounds');
+    assert(total_participants2 == 3, 'Should have 3 participants');
+    assert(total_prize_pool2 == 5000000000000000000, 'Should have 5 STRK prize pool');
+
+    // Advance to round 3
+    let (_, end_time2, _, _) = lottery_dispatcher.get_current_round_info();
+    start_cheat_block_timestamp(lottery_address, end_time2 + 1);
+
+    // Round 3: Only user3 participates
+    start_cheat_caller_address(lottery_address, user3);
+    lottery_dispatcher.buy_ticket(90);
+    stop_cheat_caller_address(lottery_address);
+
+    // Check final statistics
+    let (total_rounds3, total_participants3, total_prize_pool3) = lottery_dispatcher.get_statistics();
+    assert(total_rounds3 == 3, 'Should have 3 rounds');
+    assert(total_participants3 == 3, 'Should have 3 participants');
+    assert(total_prize_pool3 == 6000000000000000000, 'Should have 6 STRK prize pool');
 
     stop_cheat_block_timestamp(lottery_address);
 }
