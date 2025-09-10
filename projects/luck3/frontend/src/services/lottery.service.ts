@@ -137,7 +137,7 @@ class LotteryService {
     try {
       const winningNumber = await this._contractClient.call(
         'get_round_winning_number',
-        [roundId]
+        roundId
       );
       return Number(winningNumber);
     } catch {
@@ -188,14 +188,18 @@ class LotteryService {
       const roundsInfo = await this._contractClient.getRoundsInfo(roundIds);
 
       return roundsInfo.map((roundInfo: any) => {
-        const [
-          roundId,
-          endTime,
-          prizePool,
-          totalTickets,
-          winningNumber,
-          isDrawn,
-        ] = Object.values(roundInfo) as any[];
+        // Handle different data formats from contract
+        let roundId, endTime, prizePool, totalTickets, winningNumber, isDrawn;
+
+        if (Array.isArray(roundInfo)) {
+          [roundId, endTime, prizePool, totalTickets, winningNumber, isDrawn] =
+            roundInfo;
+        } else {
+          // Handle object format
+          const values = Object.values(roundInfo);
+          [roundId, endTime, prizePool, totalTickets, winningNumber, isDrawn] =
+            values;
+        }
 
         return {
           roundId: BigInt(roundId), // Convert to bigint

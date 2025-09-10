@@ -17,6 +17,7 @@
     "@mantine/notifications": "^8.2.8",
     "@starknet-react/chains": "^5.0.1",
     "@starknet-react/core": "^5.0.1",
+    "abi-wan-kanabi": "^2.2.4",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.542.0",
     "react": "^19.1.1",

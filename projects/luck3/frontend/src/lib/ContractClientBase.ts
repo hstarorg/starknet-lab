@@ -10,7 +10,10 @@ import {
   type Call,
   type BigNumberish,
 } from 'starknet';
-import type { ExtractAbiFunctionNames, FunctionArgs } from './kanabi';
+import type {
+  ExtractAbiFunctionNames,
+  FunctionArgs,
+} from 'abi-wan-kanabi/kanabi';
 
 export abstract class ContractClientBase<TAbi extends Abi> {
   protected contract: TypedContractV2<TAbi>;

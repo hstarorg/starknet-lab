@@ -15,11 +15,15 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   TicketIcon,
+  PlayIcon,
 } from '@heroicons/react/24/outline';
 import { formatSTRK } from '@/utils';
+import { useAccount } from '@starknet-react/core';
+import { useEffect } from 'react';
 
 export function History() {
   const { store, snapshot } = useStore(HistoryStore);
+  const { address, account } = useAccount();
 
   const { rounds, loading, hasMore } = snapshot;
 
@@ -33,14 +37,34 @@ export function History() {
     });
   };
 
+  // Set account when it changes
+  useEffect(() => {
+    if (account) {
+      store.setAccount(account);
+    }
+  }, [store, account]);
+
+  // Load initial data when component mounts or address changes
+  useEffect(() => {
+    if (address && rounds.length === 0) {
+      store.loadMoreRounds(address);
+    }
+  }, [store, address, rounds.length]);
+
   const getRoundStatus = (round: any) => {
-    if (round.winningNumber && round.winningNumber > 0) {
+    if (round.winningNumber) {
       return { status: 'completed', color: 'green', text: 'Completed' };
     }
     const now = Date.now() / 1000;
     const endTime = Number(round.endTime);
     if (now > endTime) {
-      return { status: 'drawing', color: 'orange', text: 'Drawing' };
+      // Check if round has participants using totalTickets
+      const hasParticipants = round.totalTickets > 0n;
+      if (hasParticipants) {
+        return { status: 'drawing', color: 'orange', text: 'Drawing' };
+      } else {
+        return { status: 'expired', color: 'gray', text: 'Expired' };
+      }
     }
     return { status: 'active', color: 'blue', text: 'Active' };
   };
@@ -76,7 +100,7 @@ export function History() {
                 const roundStatus = getRoundStatus(round);
                 return (
                   <Card
-                    key={round.id.toString()}
+                    key={round.roundId.toString()}
                     withBorder
                     radius="sm"
                     className="bg-gradient-to-r from-gray-50 to-white"
@@ -87,7 +111,7 @@ export function History() {
                         <Group gap="xs">
                           <TrophyIcon className="h-4 w-4 text-gray-600" />
                           <Text size="sm" fw={600}>
-                            Round #{round.id.toString()}
+                            Round #{round.roundId.toString()}
                           </Text>
                         </Group>
                         <Badge
@@ -227,12 +251,10 @@ export function History() {
                               size="xs"
                               variant="light"
                               color="orange"
-                              onClick={() => {
-                                // TODO: Implement draw trigger
-                                console.log('Trigger draw for round', round.id);
-                              }}
+                              leftSection={<PlayIcon className="h-3 w-3" />}
+                              onClick={() => store.handleTriggerDraw(round.roundId)}
                             >
-                              Trigger Draw
+                              Draw
                             </Button>
                           )}
                           {round.userTicket?.isWinner &&
@@ -241,10 +263,10 @@ export function History() {
                                 size="xs"
                                 variant="filled"
                                 color="green"
-                                onClick={() => {
-                                  // TODO: Implement reward claiming
-                                  console.log('Claim reward for round', round.id);
-                                }}
+                              onClick={() => {
+                                // TODO: Implement reward claiming
+                                console.log('Claim reward for round', round.roundId);
+                              }}
                               >
                                 Claim Reward
                               </Button>
@@ -261,7 +283,7 @@ export function History() {
           {hasMore && rounds.length > 0 && (
             <Box ta="center" mt="md">
               <Button
-                onClick={() => store.loadMoreRounds()}
+                onClick={() => store.loadMoreRounds(address)}
                 loading={loading}
                 variant="light"
                 color="blue"
