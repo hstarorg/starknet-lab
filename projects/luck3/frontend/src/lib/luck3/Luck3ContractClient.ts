@@ -46,7 +46,7 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
   async getInfo() {
     const result = await this.contract.get_info();
     return {
-      owner: getChecksumAddress(result[0]),
+      owner: getChecksumAddress(result[0] as any),
       currentRoundId: result[1],
       accumulatedPrizePool: result[2] as bigint,
     };
