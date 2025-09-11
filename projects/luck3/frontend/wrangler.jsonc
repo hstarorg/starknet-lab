@@ -2,6 +2,7 @@
   "name": "luck3",
   "compatibility_date": "2025-09-10",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
   }
 }
