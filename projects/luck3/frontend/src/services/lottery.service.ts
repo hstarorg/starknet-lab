@@ -43,6 +43,8 @@ class LotteryService {
         roundId
       );
 
+      console.log('User ticket:', userTicket);
+
       // Check if user has no ticket (guess = 0 means no ticket)
       if (userTicket.guess === 0) {
         return null;

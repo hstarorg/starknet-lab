@@ -1,12 +1,13 @@
 import { proxy } from 'valtio';
 import { lotteryService } from '@/services/lottery.service';
-import type { CurrentRoundInfo, UserTicket } from '@/types/lottery.type';
+import type { UserTicket } from '@/types/lottery.type';
 import type { AccountInterface } from 'starknet';
 import { notifications } from '@mantine/notifications';
+import type { RoundInfo } from '@/lib/luck3/Luck3ContractClient';
 
 type ViewModel = {
   loading?: boolean;
-  currentRound?: CurrentRoundInfo;
+  currentRound?: RoundInfo | null;
 
   userTicketLoading?: boolean;
   userTicket?: UserTicket | null;
@@ -107,7 +108,7 @@ export class LotteryStore {
     try {
       const userTicket = await lotteryService.getUserTicket(
         this.account?.address || '',
-        this.state.currentRound.roundId
+        this.state.currentRound.id
       );
       this.state.userTicket = userTicket;
     } finally {
@@ -129,7 +130,7 @@ export class LotteryStore {
       // Prepare round IDs for batch query (current - 1, current - 2)
       const roundIds: bigint[] = [];
       for (let i = 1; i <= 2; i++) {
-        const roundId = currentRound.roundId - BigInt(i);
+        const roundId = currentRound!.id - BigInt(i);
         if (roundId > 0n) {
           roundIds.push(roundId);
         }
@@ -168,10 +169,14 @@ export class LotteryStore {
     }
   }
 
-  handleBuyTicket = async (guess: number) => {
+  handleBuyTicket = async (roundId: number, guess: number) => {
     this.state.purchaseLoading = true;
     try {
-      const txHash = await lotteryService.buyTicket(guess, this.account);
+      const txHash = await lotteryService.buyTicket(
+        roundId,
+        guess,
+        this.account!
+      );
       if (txHash) {
         notifications.show({
           message: 'Ticket purchased successfully!',
@@ -195,7 +200,7 @@ export class LotteryStore {
 
   handleClaimReward = async (roundId: bigint) => {
     try {
-      const txHash = await lotteryService.claimReward(roundId, this.account);
+      const txHash = await lotteryService.claimReward(roundId, this.account!);
       if (txHash) {
         notifications.show({
           message: 'Reward claimed successfully!',
@@ -210,24 +215,6 @@ export class LotteryStore {
         color: 'red',
       });
       console.error('Claim reward error:', error);
-    }
-  };
-
-  handleTriggerDraw = async (roundId: bigint) => {
-    try {
-      const txHash = await lotteryService.drawRoundsUpTo(roundId, this.account);
-      console.log('Draw transaction hash:', txHash);
-      notifications.show({
-        message: 'Draw triggered successfully! Refreshing data...',
-        color: 'green',
-      });
-      await this.fetchRecentRounds();
-    } catch (error) {
-      notifications.show({
-        message: 'Failed to trigger draw. Please try again.',
-        color: 'red',
-      });
-      console.error('Trigger draw error:', error);
     }
   };
 }

@@ -23,11 +23,11 @@ export function Lottery() {
 
   // Handle initial data loading when account is connected
   useEffect(() => {
-    if (account?.address && currentRound?.roundId) {
+    if (account?.address && currentRound?.id) {
       store.fetchUserTicket();
       store.fetchRecentRounds();
     }
-  }, [store, account?.address, currentRound?.roundId]);
+  }, [store, account?.address, currentRound?.id]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
@@ -45,7 +45,7 @@ export function Lottery() {
       <div className="flex gap-4">
         <div className="flex-2">
           <CurrentLottery
-            roundId={currentRound?.roundId || 0n}
+            roundId={currentRound?.id || 0n}
             endTime={currentRound?.endTime || 0n}
             prizePool={currentRound?.prizePool || 0n}
             totalTickets={currentRound?.totalTickets || 0n}
@@ -76,7 +76,7 @@ export function Lottery() {
                 />
               ) : (
                 <TicketPurchase
-                  currentRound={currentRound}
+                  currentRound={currentRound!}
                   onBuyTicket={store.handleBuyTicket}
                   purchaseLoading={snapshot.purchaseLoading}
                   disabled={!currentRound || snapshot.loading}
@@ -90,7 +90,6 @@ export function Lottery() {
           <RecentLottery
             recentRoundsLoading={snapshot.recentRoundsLoading}
             recentRounds={snapshot.recentRounds}
-            onTriggerDraw={store.handleTriggerDraw}
           />
         </div>
       </div>

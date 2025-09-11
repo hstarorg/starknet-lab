@@ -4,15 +4,15 @@ import {
   ArrowRightIcon,
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
-import type { CurrentRoundInfo } from '@/types/lottery.type';
 import { randomInt } from '@/utils';
 import { AppConf } from '@/constants';
+import type { RoundInfo } from '@/lib/luck3/Luck3ContractClient';
 
 interface TicketPurchaseProps {
-  onBuyTicket?: (guess: number) => void;
+  onBuyTicket?: (roundId: number, guess: number) => void;
   disabled?: boolean;
   isConnected?: boolean;
-  currentRound?: CurrentRoundInfo;
+  currentRound?: RoundInfo;
   purchaseLoading?: boolean;
 }
 
@@ -31,7 +31,7 @@ export function TicketPurchase({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onBuyTicket?.(Number(guess));
+    onBuyTicket?.(Number(currentRound!.id), Number(guess));
   };
 
   if (!isConnected) {

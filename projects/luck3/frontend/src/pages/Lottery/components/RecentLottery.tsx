@@ -6,14 +6,12 @@ import {
   Badge,
   LoadingOverlay,
   Box,
-  Button,
 } from '@mantine/core';
 import {
   TrophyIcon,
   ClockIcon,
   CurrencyDollarIcon,
   TicketIcon,
-  PlayIcon,
 } from '@heroicons/react/24/outline';
 import { formatSTRK } from '@/utils';
 import type { RecentRoundInfo } from '../LotteryStore';
@@ -21,7 +19,6 @@ import type { RecentRoundInfo } from '../LotteryStore';
 type RecentLotteryProps = {
   recentRounds: readonly RecentRoundInfo[];
   recentRoundsLoading?: boolean;
-  onTriggerDraw: (roundId: bigint) => void;
 };
 
 export function RecentLottery(props: RecentLotteryProps) {
@@ -93,17 +90,6 @@ export function RecentLottery(props: RecentLotteryProps) {
                         </Text>
                       </Group>
                       <Group gap="xs">
-                        {roundStatus.status === 'drawing' && (
-                          <Button
-                            size="xs"
-                            variant="light"
-                            color="orange"
-                            leftSection={<PlayIcon className="h-3 w-3" />}
-                            onClick={() => props.onTriggerDraw(round.roundId)}
-                          >
-                            Draw
-                          </Button>
-                        )}
                         <Badge
                           size="xs"
                           color={roundStatus.color}

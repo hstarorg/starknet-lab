@@ -82,7 +82,7 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
     roundId: bigint
   ): Promise<UserTicket> {
     const result = await this.contract.get_user_ticket(userAddress, roundId);
-    const [guess, isWinner, reward, claimed] = result as [
+    const [guess, isWinner, reward, claimed] = Object.values(result) as [
       number,
       boolean,
       bigint,
