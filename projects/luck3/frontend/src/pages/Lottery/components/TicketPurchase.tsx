@@ -6,13 +6,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { randomInt } from '@/utils';
 import { AppConf } from '@/constants';
-import type { RoundInfo } from '@/lib/luck3/Luck3ContractClient';
+import type { LotteryRound } from '@/types/lottery.type';
 
 interface TicketPurchaseProps {
   onBuyTicket?: (roundId: number, guess: number) => void;
   disabled?: boolean;
   isConnected?: boolean;
-  currentRound?: RoundInfo;
+  currentRound?: LotteryRound;
   purchaseLoading?: boolean;
 }
 

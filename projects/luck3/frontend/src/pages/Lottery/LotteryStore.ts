@@ -1,13 +1,12 @@
 import { proxy } from 'valtio';
 import { lotteryService } from '@/services/lottery.service';
-import type { UserTicket } from '@/types/lottery.type';
+import type { LotteryRound, UserTicket } from '@/types/lottery.type';
 import type { AccountInterface } from 'starknet';
 import { notifications } from '@mantine/notifications';
-import type { RoundInfo } from '@/lib/luck3/Luck3ContractClient';
 
 type ViewModel = {
   loading?: boolean;
-  currentRound?: RoundInfo | null;
+  currentRound?: LotteryRound | null;
 
   userTicketLoading?: boolean;
   userTicket?: UserTicket | null;
@@ -128,9 +127,9 @@ export class LotteryStore {
       const currentRound = await lotteryService.getCurrentRoundInfo();
 
       // Prepare round IDs for batch query (current - 1, current - 2)
-      const roundIds: bigint[] = [];
+      const roundIds: number[] = [];
       for (let i = 1; i <= 2; i++) {
-        const roundId = currentRound!.id - BigInt(i);
+        const roundId = currentRound!.id - i;
         if (roundId > 0n) {
           roundIds.push(roundId);
         }
@@ -198,7 +197,7 @@ export class LotteryStore {
     }
   };
 
-  handleClaimReward = async (roundId: bigint) => {
+  handleClaimReward = async (roundId: number) => {
     try {
       const txHash = await lotteryService.claimReward(roundId, this.account!);
       if (txHash) {

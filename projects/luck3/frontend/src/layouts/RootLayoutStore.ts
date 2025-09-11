@@ -34,7 +34,6 @@ export class RootLayoutStore {
   async loadData() {
     const info = await lotteryService.getInfo();
     this.state.owner = info.owner;
-    console.log('RootLayoutStore info:', info);
   }
 
   setAdminModalVisible = (open: boolean) => {

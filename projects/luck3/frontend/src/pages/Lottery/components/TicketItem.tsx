@@ -1,10 +1,9 @@
 import { Button } from '@mantine/core';
-import { formatSTRK } from '@/utils';
 import type { UserTicket } from '@/types/lottery.type';
 
 interface TicketItemProps {
   ticket: UserTicket;
-  onClaimReward?: (roundId: bigint) => void;
+  onClaimReward?: (roundId: number) => void;
   isCurrentRound?: boolean;
 }
 
@@ -75,7 +74,7 @@ export function TicketItem({ onClaimReward, ticket, isCurrentRound = false }: Ti
               <div className="space-y-2">
                 <div className="text-xl font-bold text-green-600">🎉 WINNER!</div>
                 <div className="text-lg font-semibold text-green-700">
-                  {formatSTRK(ticket.reward)} STRK
+                  {ticket.reward} STRK
                 </div>
                 <Button
                   onClick={() => onClaimReward?.(ticket.roundId)}
@@ -89,7 +88,7 @@ export function TicketItem({ onClaimReward, ticket, isCurrentRound = false }: Ti
               <div className="space-y-2">
                 <div className="text-xl font-bold text-blue-600">✅ CLAIMED</div>
                 <div className="text-lg font-semibold text-blue-700">
-                  {formatSTRK(ticket.reward)} STRK
+                  {ticket.reward} STRK
                 </div>
                 <div className="text-sm text-gray-600">Prize collected successfully!</div>
               </div>

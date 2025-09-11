@@ -15,7 +15,6 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   TicketIcon,
-  PlayIcon,
 } from '@heroicons/react/24/outline';
 import { formatSTRK } from '@/utils';
 import { useAccount } from '@starknet-react/core';
@@ -128,7 +127,9 @@ export function History() {
                         <Group gap="xs">
                           <ClockIcon className="h-3 w-3 text-gray-500" />
                           <Text size="xs" c="dimmed">
-                            {round.endTime > 0n ? formatDate(round.endTime) : 'Date not available'}
+                            {round.endTime > 0n
+                              ? formatDate(round.endTime)
+                              : 'Date not available'}
                           </Text>
                         </Group>
                       </Group>
@@ -193,7 +194,9 @@ export function History() {
                           <Group gap="xs">
                             <Badge
                               size="sm"
-                              color={round.userTicket.isWinner ? 'green' : 'blue'}
+                              color={
+                                round.userTicket.isWinner ? 'green' : 'blue'
+                              }
                               variant="light"
                             >
                               {round.userTicket.guess}
@@ -218,7 +221,7 @@ export function History() {
 
                       {/* Reward Info */}
                       {round.userTicket?.isWinner &&
-                        round.userTicket.reward > 0n && (
+                        !round.userTicket?.claimed && (
                           <Group
                             justify="space-between"
                             align="center"
@@ -235,7 +238,7 @@ export function History() {
                                 <CurrencyDollarIcon className="h-3 w-3" />
                               }
                             >
-                              {formatSTRK(round.userTicket.reward)}
+                              {round.userTicket.reward}
                             </Badge>
                           </Group>
                         )}
@@ -246,27 +249,19 @@ export function History() {
                           Actions:
                         </Text>
                         <Group gap="xs">
-                          {roundStatus.status === 'drawing' && (
-                            <Button
-                              size="xs"
-                              variant="light"
-                              color="orange"
-                              leftSection={<PlayIcon className="h-3 w-3" />}
-                              onClick={() => store.handleTriggerDraw(round.roundId)}
-                            >
-                              Draw
-                            </Button>
-                          )}
                           {round.userTicket?.isWinner &&
-                            round.userTicket.reward > 0n && (
+                            !round.userTicket?.claimed && (
                               <Button
                                 size="xs"
                                 variant="filled"
                                 color="green"
-                              onClick={() => {
-                                // TODO: Implement reward claiming
-                                console.log('Claim reward for round', round.roundId);
-                              }}
+                                onClick={() => {
+                                  // TODO: Implement reward claiming
+                                  console.log(
+                                    'Claim reward for round',
+                                    round.roundId
+                                  );
+                                }}
                               >
                                 Claim Reward
                               </Button>

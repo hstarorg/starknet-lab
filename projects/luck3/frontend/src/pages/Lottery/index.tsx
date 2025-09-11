@@ -45,10 +45,10 @@ export function Lottery() {
       <div className="flex gap-4">
         <div className="flex-2">
           <CurrentLottery
-            roundId={currentRound?.id || 0n}
-            endTime={currentRound?.endTime || 0n}
-            prizePool={currentRound?.prizePool || 0n}
-            totalTickets={currentRound?.totalTickets || 0n}
+            roundId={currentRound?.id || 0}
+            endTime={currentRound?.endTime || 0}
+            prizePool={currentRound?.prizePool}
+            totalTickets={currentRound?.totalTickets || 0}
             loading={snapshot.loading}
           />
           {!address ? (

@@ -1,7 +1,7 @@
 import { proxy } from 'valtio';
 import { lotteryService } from '@/services/lottery.service';
 import type { UserTicket } from '@/types/lottery.type';
-import { notifications } from '@mantine/notifications';
+import type { AccountInterface } from 'starknet';
 
 export interface HistoryRound {
   roundId: bigint;
@@ -21,7 +21,8 @@ type ViewModel = {
 
 export class HistoryStore {
   private readonly ITEMS_PER_PAGE = 10;
-  private account: any = null;
+
+  private account: AccountInterface | null = null;
 
   state = proxy<ViewModel>({
     rounds: [],
@@ -29,7 +30,7 @@ export class HistoryStore {
     minRoundId: null,
   });
 
-  setAccount = (account: any) => {
+  setAccount = (account: AccountInterface) => {
     this.account = account;
   };
 
@@ -50,7 +51,7 @@ export class HistoryStore {
     try {
       // Get current round info to determine the starting point
       const currentRoundInfo = await lotteryService.getCurrentRoundInfo();
-      const currentRoundId = Number(currentRoundInfo.roundId);
+      const currentRoundId = Number(currentRoundInfo!.id);
 
       // Initialize minRoundId if not set
       if (this.state.minRoundId === null) {
@@ -58,7 +59,7 @@ export class HistoryStore {
       }
 
       // Prepare round IDs for batch query
-      const roundIds: bigint[] = [];
+      const roundIds: number[] = [];
       let tempRoundId = this.state.minRoundId;
 
       // Load ITEMS_PER_PAGE rounds backwards
@@ -67,7 +68,7 @@ export class HistoryStore {
         if (tempRoundId <= 0) {
           break;
         }
-        roundIds.push(BigInt(tempRoundId));
+        roundIds.push(tempRoundId);
       }
 
       if (roundIds.length === 0) {
@@ -109,21 +110,7 @@ export class HistoryStore {
     }
   }
 
-  async handleTriggerDraw(roundId: bigint) {
-    try {
-      const txHash = await lotteryService.drawRoundsUpTo(roundId, this.account);
-      console.log('Draw transaction hash:', txHash);
-      notifications.show({
-        message: 'Draw triggered successfully! Refreshing data...',
-        color: 'green',
-      });
-      await this.loadMoreRounds(); // Refresh the data
-    } catch (error) {
-      notifications.show({
-        message: 'Failed to trigger draw. Please try again.',
-        color: 'red',
-      });
-      console.error('Trigger draw error:', error);
-    }
+  async claimReward(roundId: number) {
+    lotteryService.claimReward(roundId, this.account as AccountInterface);
   }
 }

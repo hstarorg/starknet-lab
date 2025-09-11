@@ -1,11 +1,11 @@
-import type { RoundInfo } from '@/lib/luck3/Luck3ContractClient';
-import { lotteryService } from '@/services/lottery.service';
-import { formatSTRK } from '@/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { proxy } from 'valtio';
 
+import { lotteryService } from '@/services/lottery.service';
+import type { LotteryRound } from '@/types/lottery.type';
+
 type ViewModel = {
-  currentRound?: RoundInfo | null;
+  currentRound?: LotteryRound | null;
   timeRemaining?: string;
   accumulatedPrizePool?: string;
   isLoading?: boolean;
@@ -36,7 +36,7 @@ export class HomeStore {
       const round = await lotteryService.getRoundInfo(info.currentRoundId);
       this.state.totalRounds = info.currentRoundId;
       this.state.currentRound = round;
-      this.state.accumulatedPrizePool = formatSTRK(info.accumulatedPrizePool);
+      this.state.accumulatedPrizePool = info.accumulatedPrizePool;
       if (round) {
         this.state.timeRemaining = formatDistanceToNow(
           new Date(Number(round.endTime) * 1000),

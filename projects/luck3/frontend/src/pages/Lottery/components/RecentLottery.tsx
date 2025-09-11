@@ -195,7 +195,7 @@ export function RecentLottery(props: RecentLotteryProps) {
 
                     {/* Reward Info */}
                     {round.userTicket?.isWinner &&
-                      round.userTicket.reward > 0n && (
+                      !round.userTicket.claimed && (
                         <Group
                           justify="space-between"
                           align="center"
@@ -212,7 +212,7 @@ export function RecentLottery(props: RecentLotteryProps) {
                               <CurrencyDollarIcon className="h-3 w-3" />
                             }
                           >
-                            {formatSTRK(round.userTicket.reward)}
+                            {round.userTicket.reward}
                           </Badge>
                         </Group>
                       )}

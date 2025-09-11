@@ -1,16 +1,17 @@
 export interface LotteryRound {
-  id: bigint;
-  startTime: bigint;
-  endTime: bigint;
-  prizePool: bigint;
+  id: number;
+  // startTime: number;
+  endTime: number;
+  prizePool: string;
   winningNumber: number;
+  totalTickets: number;
   isDrawn: boolean;
 }
 
 export interface UserTicket {
-  roundId: bigint;
+  roundId: number;
   guess: number;
   isWinner: boolean;
-  reward: bigint;
+  reward: string;
   claimed: boolean;
 }

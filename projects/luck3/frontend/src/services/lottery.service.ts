@@ -1,9 +1,7 @@
 import { AppEnvs } from '@/constants';
-import {
-  Luck3ContractClient,
-  type RoundInfo,
-} from '@/lib/luck3/Luck3ContractClient';
-import type { UserTicket } from '@/types/lottery.type';
+import { Luck3ContractClient } from '@/lib/luck3/Luck3ContractClient';
+import type { LotteryRound, UserTicket } from '@/types/lottery.type';
+import { formatSTRK } from '@/utils';
 import type { AccountInterface } from 'starknet';
 
 // STRK token ABI (minimal for approval)
@@ -18,7 +16,7 @@ class LotteryService {
     );
   }
 
-  async getCurrentRoundInfo(): Promise<RoundInfo | null> {
+  async getCurrentRoundInfo(): Promise<LotteryRound | null> {
     const { currentRoundId } = await this.getInfo();
     if (currentRoundId <= 0) {
       return null;
@@ -27,7 +25,12 @@ class LotteryService {
   }
 
   async getInfo() {
-    return this._contractClient.getInfo();
+    const info = await this._contractClient.getInfo();
+    return {
+      owner: info.owner,
+      currentRoundId: Number(info.currentRoundId),
+      accumulatedPrizePool: formatSTRK(info.accumulatedPrizePool),
+    };
   }
 
   /**
@@ -35,12 +38,12 @@ class LotteryService {
    */
   async getUserTicket(
     userAddress: string,
-    roundId: bigint
+    roundId: number
   ): Promise<UserTicket | null> {
     try {
       const userTicket = await this._contractClient.getUserTicket(
         userAddress,
-        roundId
+        BigInt(roundId)
       );
 
       console.log('User ticket:', userTicket);
@@ -54,7 +57,7 @@ class LotteryService {
         roundId,
         guess: userTicket.guess,
         isWinner: userTicket.isWinner,
-        reward: userTicket.reward,
+        reward: formatSTRK(userTicket.reward),
         claimed: userTicket.claimed,
       };
     } catch (error) {
@@ -67,41 +70,21 @@ class LotteryService {
    * Get round info for a specific round (returns null if invalid)
    */
   async getRoundInfo(roundId: number) {
-    const roundInfo = await this._contractClient.getRoundInfo(roundId);
+    const round = await this._contractClient.getRoundInfo(roundId);
 
     // Check if round is valid (id should match requested id)
-    if (roundInfo.id !== BigInt(roundId)) {
+    if (round.id !== BigInt(roundId)) {
       return null;
     }
 
-    return roundInfo;
-  }
-
-  /**
-   * Get winning number for a round (from round info)
-   */
-  async getRoundWinningNumber(roundId: number): Promise<number | null> {
-    try {
-      const roundInfo = await this.getRoundInfo(roundId);
-      if (!roundInfo) return null;
-
-      return roundInfo.isDrawn ? roundInfo.winningNumber : null;
-    } catch {
-      // Round not found or not drawn yet
-      return null;
-    }
-  }
-
-  /**
-   * Get winning numbers for multiple rounds in batch
-   */
-  async getRoundsWinningNumbers(
-    roundIds: number[]
-  ): Promise<(number | null)[]> {
-    const promises = roundIds.map((roundId) =>
-      this.getRoundWinningNumber(roundId)
-    );
-    return Promise.all(promises);
+    return {
+      id: Number(round.id),
+      endTime: Number(round.endTime),
+      prizePool: formatSTRK(round.prizePool),
+      winningNumber: Number(round.winningNumber),
+      totalTickets: Number(round.totalTickets),
+      isDrawn: round.isDrawn,
+    } as LotteryRound;
   }
 
   /**
@@ -109,7 +92,7 @@ class LotteryService {
    */
   async getUserTicketsBatch(
     userAddress: string,
-    roundIds: bigint[]
+    roundIds: number[]
   ): Promise<(UserTicket | null)[]> {
     const promises = roundIds.map((roundId) =>
       this.getUserTicket(userAddress, roundId)
@@ -179,10 +162,10 @@ class LotteryService {
    * Claim reward for a round
    */
   async claimReward(
-    roundId: bigint,
+    roundId: number,
     account: AccountInterface
   ): Promise<string> {
-    return await this._contractClient.claimReward(account, roundId);
+    return await this._contractClient.claimReward(account, BigInt(roundId));
   }
 
   /**
