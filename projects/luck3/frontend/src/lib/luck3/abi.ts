@@ -1,8 +1,8 @@
 export const ABI = [
   {
     "type": "impl",
-    "name": "ILotteryImpl",
-    "interface_name": "luck3::lottery::IDailyLottery"
+    "name": "SimpleLotteryImpl",
+    "interface_name": "luck3::simple_lottery::ISimpleLottery"
   },
   {
     "type": "struct",
@@ -34,12 +34,16 @@ export const ABI = [
   },
   {
     "type": "interface",
-    "name": "luck3::lottery::IDailyLottery",
+    "name": "luck3::simple_lottery::ISimpleLottery",
     "items": [
       {
         "type": "function",
         "name": "buy_ticket",
         "inputs": [
+          {
+            "name": "round_id",
+            "type": "core::integer::u64"
+          },
           {
             "name": "guess",
             "type": "core::integer::u8"
@@ -62,18 +66,47 @@ export const ABI = [
       },
       {
         "type": "function",
-        "name": "get_current_round_info",
-        "inputs": [],
+        "name": "create_round",
+        "inputs": [
+          {
+            "name": "duration_seconds",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "draw_winner",
+        "inputs": [
+          {
+            "name": "round_id",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_round_info",
+        "inputs": [
+          {
+            "name": "round_id",
+            "type": "core::integer::u64"
+          }
+        ],
         "outputs": [
           {
-            "type": "(core::integer::u64, core::integer::u64, core::integer::u256, core::integer::u64)"
+            "type": "(core::integer::u64, core::integer::u64, core::integer::u256, core::integer::u64, core::integer::u8, core::bool)"
           }
         ],
         "state_mutability": "view"
       },
       {
         "type": "function",
-        "name": "get_user_tickets",
+        "name": "get_user_ticket",
         "inputs": [
           {
             "name": "user",
@@ -86,89 +119,18 @@ export const ABI = [
         ],
         "outputs": [
           {
-            "type": "(core::integer::u8, core::bool)"
+            "type": "(core::integer::u8, core::bool, core::integer::u256, core::bool)"
           }
         ],
         "state_mutability": "view"
       },
       {
         "type": "function",
-        "name": "get_user_reward",
-        "inputs": [
-          {
-            "name": "user",
-            "type": "core::starknet::contract_address::ContractAddress"
-          },
-          {
-            "name": "round_id",
-            "type": "core::integer::u64"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::integer::u256"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "get_round_winning_number",
-        "inputs": [
-          {
-            "name": "round_id",
-            "type": "core::integer::u64"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::integer::u8"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "trigger_draw_if_expired",
-        "inputs": [],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "draw_rounds_up_to",
-        "inputs": [
-          {
-            "name": "target_round_id",
-            "type": "core::integer::u64"
-          }
-        ],
-        "outputs": [],
-        "state_mutability": "external"
-      },
-      {
-        "type": "function",
-        "name": "get_statistics",
+        "name": "get_info",
         "inputs": [],
         "outputs": [
           {
-            "type": "(core::integer::u64, core::integer::u64, core::integer::u256)"
-          }
-        ],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "get_rounds_info",
-        "inputs": [
-          {
-            "name": "round_ids",
-            "type": "core::array::Array::<core::integer::u64>"
-          }
-        ],
-        "outputs": [
-          {
-            "type": "core::array::Array::<(core::integer::u64, core::integer::u64, core::integer::u256, core::integer::u64, core::integer::u8, core::bool)>"
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u64, core::integer::u256)"
           }
         ],
         "state_mutability": "view"
@@ -180,7 +142,7 @@ export const ABI = [
     "name": "constructor",
     "inputs": [
       {
-        "name": "strk_token",
+        "name": "strk_token_address",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
@@ -191,7 +153,7 @@ export const ABI = [
   },
   {
     "type": "event",
-    "name": "luck3::lottery::DailyLottery::TicketBought",
+    "name": "luck3::simple_lottery::SimpleLottery::TicketBought",
     "kind": "struct",
     "members": [
       {
@@ -218,7 +180,7 @@ export const ABI = [
   },
   {
     "type": "event",
-    "name": "luck3::lottery::DailyLottery::WinnerDrawn",
+    "name": "luck3::simple_lottery::SimpleLottery::WinnerDrawn",
     "kind": "struct",
     "members": [
       {
@@ -255,7 +217,7 @@ export const ABI = [
   },
   {
     "type": "event",
-    "name": "luck3::lottery::DailyLottery::RewardClaimed",
+    "name": "luck3::simple_lottery::SimpleLottery::RewardClaimed",
     "kind": "struct",
     "members": [
       {
@@ -282,7 +244,7 @@ export const ABI = [
   },
   {
     "type": "event",
-    "name": "luck3::lottery::DailyLottery::NewRoundStarted",
+    "name": "luck3::simple_lottery::SimpleLottery::RoundCreated",
     "kind": "struct",
     "members": [
       {
@@ -296,6 +258,11 @@ export const ABI = [
         "kind": "data"
       },
       {
+        "name": "end_time",
+        "type": "core::integer::u64",
+        "kind": "data"
+      },
+      {
         "name": "timestamp",
         "type": "core::integer::u64",
         "kind": "data"
@@ -304,27 +271,27 @@ export const ABI = [
   },
   {
     "type": "event",
-    "name": "luck3::lottery::DailyLottery::Event",
+    "name": "luck3::simple_lottery::SimpleLottery::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "TicketBought",
-        "type": "luck3::lottery::DailyLottery::TicketBought",
+        "type": "luck3::simple_lottery::SimpleLottery::TicketBought",
         "kind": "nested"
       },
       {
         "name": "WinnerDrawn",
-        "type": "luck3::lottery::DailyLottery::WinnerDrawn",
+        "type": "luck3::simple_lottery::SimpleLottery::WinnerDrawn",
         "kind": "nested"
       },
       {
         "name": "RewardClaimed",
-        "type": "luck3::lottery::DailyLottery::RewardClaimed",
+        "type": "luck3::simple_lottery::SimpleLottery::RewardClaimed",
         "kind": "nested"
       },
       {
-        "name": "NewRoundStarted",
-        "type": "luck3::lottery::DailyLottery::NewRoundStarted",
+        "name": "RoundCreated",
+        "type": "luck3::simple_lottery::SimpleLottery::RoundCreated",
         "kind": "nested"
       }
     ]

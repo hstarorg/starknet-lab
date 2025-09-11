@@ -19,3 +19,8 @@ export function formatSTRK(amount: bigint) {
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+export function getUnixTimestamp(date?: Date | string | number): number {
+  const d = date ? (date instanceof Date ? date : new Date(date)) : new Date();
+  return Math.floor(d.valueOf() / 1000);
+}

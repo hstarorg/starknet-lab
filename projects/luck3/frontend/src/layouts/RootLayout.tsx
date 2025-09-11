@@ -1,7 +1,18 @@
 import { Link, Outlet } from 'react-router-dom';
+import { useAccount } from '@starknet-react/core';
+
 import { ConnectButton } from '../components/connect-button';
+import { useStore } from '@/hooks';
+import { RootLayoutStore } from './RootLayoutStore';
+import { NumberInput } from '@mantine/core';
 
 export function RootLayout() {
+  const { store, snapshot } = useStore(RootLayoutStore);
+  const { account } = useAccount();
+
+  const isOwner =
+    account?.address?.toLowerCase() === (snapshot.owner || '').toLowerCase();
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-violet-900 overflow-hidden">
       {/* Global rich background decoration system - pure blue-purple color scheme */}
@@ -115,6 +126,14 @@ export function RootLayout() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            {isOwner && (
+              <button
+                onClick={() => store.setAdminModalVisible(true)}
+                className="text-white/90 hover:text-white transition-colors font-medium drop-shadow-sm bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-md border border-red-400/30"
+              >
+                ⚙️ Admin
+              </button>
+            )}
             <a
               href="https://github.com/hstarorg/starknet-lab/tree/main/projects/luck3"
               target="_blank"
@@ -134,6 +153,102 @@ export function RootLayout() {
       <main className="relative z-10 container mx-auto px-4 py-8">
         <Outlet />
       </main>
+
+      {/* Admin Modal */}
+      {snapshot.adminModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 max-w-md w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-white">Admin Panel</h3>
+              <button
+                onClick={() => store.setAdminModalVisible(false)}
+                className="text-white/70 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {!snapshot.adminAction ? (
+              <div className="space-y-4">
+                <button
+                  onClick={() => store.setAdminAction('create')}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                >
+                  🆕 Create New Round
+                </button>
+                <button
+                  onClick={() => store.setAdminAction('draw')}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                >
+                  🎯 Draw Winner
+                </button>
+              </div>
+            ) : snapshot.adminAction === 'create' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-white font-medium mb-2">
+                    Round Duration (seconds)
+                  </label>
+                  <NumberInput
+                    value={snapshot.durationSeconds}
+                    onChange={(value) =>
+                      store.setDurationSeconds(value as number)
+                    }
+                    placeholder="e.g., 86400 (24 hours)"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => store.setAdminAction(null)}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => store.handleCreateRound(account!)}
+                    disabled={
+                      snapshot.isProcessing || !snapshot.durationSeconds
+                    }
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                  >
+                    {snapshot.isProcessing ? 'Creating...' : 'Create Round'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-white font-medium mb-2">
+                    Round ID
+                  </label>
+                  <NumberInput
+                    value={snapshot.roundId}
+                    onChange={(value) => store.setRoundId(value as number)}
+                    placeholder="Enter round ID to draw"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => store.setAdminAction(null)}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => store.handleDrawWinner(account!)}
+                    disabled={snapshot.isProcessing || !snapshot.roundId}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                  >
+                    {snapshot.isProcessing ? 'Drawing...' : 'Draw Winner'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="text-center text-white/70 text-sm py-4">
         © {new Date().getFullYear()} Luck3. All rights reserved.

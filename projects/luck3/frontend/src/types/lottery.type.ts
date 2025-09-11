@@ -14,11 +14,3 @@ export interface UserTicket {
   reward: bigint;
   claimed: boolean;
 }
-
-export interface CurrentRoundInfo {
-  roundId: bigint;
-  endTime: bigint;
-  prizePool: bigint;
-  totalTickets: bigint;
-  timeRemaining: bigint;
-}

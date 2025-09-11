@@ -35,6 +35,10 @@ export abstract class ContractClientBase<TAbi extends Abi> {
     ).typedv2(options.abi);
   }
 
+  connect(account: ProviderInterface | AccountInterface) {
+    this.contract.connect(account);
+  }
+
   call<TFunctionName extends ExtractAbiFunctionNames<TAbi>>(
     method: TFunctionName,
     args?: FunctionArgs<TAbi, TFunctionName>

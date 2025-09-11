@@ -1,16 +1,15 @@
+import type { RoundInfo } from '@/lib/luck3/Luck3ContractClient';
 import { lotteryService } from '@/services/lottery.service';
-import type { CurrentRoundInfo } from '@/types/lottery.type';
+import { formatSTRK } from '@/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { proxy } from 'valtio';
 
 type ViewModel = {
-  currentRound?: CurrentRoundInfo;
+  currentRound?: RoundInfo | null;
   timeRemaining?: string;
-  statistics?: {
-    totalRounds: bigint;
-    totalParticipants: bigint;
-    totalPrizePool: bigint;
-  };
+  accumulatedPrizePool?: string;
+  isLoading?: boolean;
+  totalRounds?: number;
 };
 export class HomeStore {
   state = proxy<ViewModel>({});
@@ -18,7 +17,7 @@ export class HomeStore {
   constructor() {
     this._intervalId = setInterval(() => {
       this._tick();
-    }, 1000);
+    }, 10000);
   }
 
   onMounted() {
@@ -31,38 +30,29 @@ export class HomeStore {
   }
 
   async loadData() {
+    this.state.isLoading = true;
     try {
-      const [round, statistics] = await Promise.all([
-        lotteryService.getCurrentRoundInfo(),
-        lotteryService.getStatistics(),
-      ]);
+      const info = await lotteryService.getInfo();
+      const round = await lotteryService.getRoundInfo(info.currentRoundId);
+      this.state.totalRounds = info.currentRoundId;
       this.state.currentRound = round;
-      this.state.statistics = statistics;
+      this.state.accumulatedPrizePool = formatSTRK(info.accumulatedPrizePool);
+      if (round) {
+        this.state.timeRemaining = formatDistanceToNow(
+          new Date(Number(round.endTime) * 1000),
+          {
+            addSuffix: true,
+          }
+        );
+      }
     } catch (error) {
       console.error('Failed to load home data:', error);
-      // Still try to load current round info even if statistics fail
-      try {
-        const round = await lotteryService.getCurrentRoundInfo();
-        this.state.currentRound = round;
-      } catch (roundError) {
-        console.error('Failed to load current round info:', roundError);
-      }
+    } finally {
+      this.state.isLoading = false;
     }
   }
 
-  private _updateTimeRemaining() {
-    if (!this.state.currentRound) return;
-    const endTime = this.state.currentRound.endTime;
-    this.state.timeRemaining = formatDistanceToNow(
-      new Date(Number(endTime) * 1000),
-      {
-        addSuffix: true,
-      }
-    );
-  }
-
   private _tick() {
-    console.log('HomeStore tick');
-    this._updateTimeRemaining();
+    this.loadData();
   }
 }

@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { HomeStore } from './HomeStore';
 import { useStore } from '@/hooks';
-import { numberDiv } from '@bizjs/biz-utils';
 import { AppConf } from '@/constants';
 
 const { LOTTERY_CONFIG } = AppConf;
@@ -10,29 +9,11 @@ export function Home() {
   const navigate = useNavigate();
   const { snapshot } = useStore(HomeStore);
 
-  // 实时数据从合约获取
-  const stats = {
-    currentPrizePool: Number(
-      numberDiv(String(snapshot.currentRound?.prizePool || 0), 10 ** 18)
-    ),
-    totalTicketsToday: Number(snapshot.currentRound?.totalTickets || 0),
-    participantsToday: Number(snapshot.currentRound?.totalTickets || 0),
-    totalRounds: Number(snapshot.currentRound?.roundId || 0),
-    endTime: snapshot.currentRound?.endTime,
-  };
-
-  // 全局统计数据
-  const globalStats = {
-    totalRounds: Number(snapshot.statistics?.totalRounds || 0),
-    totalParticipants: Number(snapshot.statistics?.totalParticipants || 0),
-    totalPrizePool: Number(
-      numberDiv(String(snapshot.statistics?.totalPrizePool || 0), 10 ** 18)
-    ),
-  };
-
   const handleJoinLottery = () => {
     navigate('/lottery');
   };
+
+  const currentRound = snapshot.currentRound;
 
   return (
     <div className="relative min-h-[calc(100vh-200px)] ">
@@ -114,85 +95,128 @@ export function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <button
-              onClick={handleJoinLottery}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg"
-            >
-              🎯 Join Lottery
-            </button>
+            {snapshot.isLoading ? (
+              <div className="bg-gray-500 text-white font-bold py-4 px-8 rounded-full text-lg">
+                🔄 Loading...
+              </div>
+            ) : snapshot.currentRound ? (
+              <button
+                onClick={handleJoinLottery}
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg"
+              >
+                🎯 Join Lottery
+              </button>
+            ) : (
+              <div className="bg-gray-500 text-white font-bold py-4 px-8 rounded-full text-lg">
+                ⏳ No Active Round - Please Wait
+              </div>
+            )}
             <div className="text-gray-400 text-sm">
               ⚡ Powered by Starknet • 100% On-Chain
             </div>
           </div>
         </div>
 
-        {/* 实时统计 */}
+        {/* 条件渲染：有有效轮次时显示统计，没有时显示等待信息 */}
+        {snapshot.isLoading ? (
+          <div className="text-center mb-16">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 border border-white/20">
+              <div className="text-6xl mb-4">🔄</div>
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Loading Lottery Data
+              </h3>
+              <p className="text-gray-400">
+                Please wait while we fetch the latest information...
+              </p>
+            </div>
+          </div>
+        ) : snapshot.currentRound ? (
+          <>
+            {/* 实时统计 */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">
+                Live Statistics
+              </h2>
+              <p className="text-gray-400">
+                Current round information updated in real-time
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <div className="text-3xl mb-2">⏰</div>
+                <div className="text-2xl font-bold text-white mb-1">
+                  {snapshot.timeRemaining}
+                </div>
+                <div className="text-gray-400 text-sm">Time Remaining</div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <div className="text-3xl mb-2">💰</div>
+                <div className="text-2xl font-bold text-green-400 mb-1">
+                  {currentRound?.prizePool}
+                </div>
+                <div className="text-gray-400 text-sm">STRK Prize Pool</div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <div className="text-3xl mb-2">🎫</div>
+                <div className="text-2xl font-bold text-blue-400 mb-1">
+                  {currentRound?.totalTickets}
+                </div>
+                <div className="text-gray-400 text-sm">Tickets</div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <div className="text-3xl mb-2">👥</div>
+                <div className="text-2xl font-bold text-purple-400 mb-1">
+                  {currentRound?.totalTickets}
+                </div>
+                <div className="text-gray-400 text-sm">Participants</div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center mb-16">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 border border-white/20">
+              <div className="text-6xl mb-4">⏳</div>
+              <h3 className="text-2xl font-bold text-white mb-4">
+                No Active Lottery Round
+              </h3>
+              <p className="text-gray-400 mb-6">
+                There is currently no active lottery round. Please wait for the
+                next round to begin.
+              </p>
+              <div className="text-sm text-gray-300">
+                New rounds are typically created automatically. Check back soon!
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 奖金池统计 */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Live Statistics</h2>
-          <p className="text-gray-400">Current round information updated in real-time</p>
+          <h2 className="text-3xl font-bold text-white mb-2">
+            Statistics Information
+          </h2>
+          <p className="text-gray-400">
+            Current and accumulated prize pool statistics
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
-            <div className="text-3xl mb-2">⏰</div>
-            <div className="text-2xl font-bold text-white mb-1">
-              {snapshot.timeRemaining}
-            </div>
-            <div className="text-gray-400 text-sm">Time Remaining</div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
-            <div className="text-3xl mb-2">💰</div>
-            <div className="text-2xl font-bold text-green-400 mb-1">
-              {stats.currentPrizePool.toLocaleString()}
-            </div>
-            <div className="text-gray-400 text-sm">STRK Prize Pool</div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
-            <div className="text-3xl mb-2">🎫</div>
-            <div className="text-2xl font-bold text-blue-400 mb-1">
-              {stats.totalTicketsToday.toLocaleString()}
-            </div>
-            <div className="text-gray-400 text-sm">Tickets Today</div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
-            <div className="text-3xl mb-2">👥</div>
-            <div className="text-2xl font-bold text-purple-400 mb-1">
-              {stats.participantsToday.toLocaleString()}
-            </div>
-            <div className="text-gray-400 text-sm">Participants</div>
-          </div>
-        </div>
-
-        {/* 全局统计 */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Global Statistics</h2>
-          <p className="text-gray-400">All-time lottery statistics across all rounds</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">🏆</div>
             <div className="text-2xl font-bold text-yellow-400 mb-1">
-              {globalStats.totalRounds.toLocaleString()}
+              {snapshot.totalRounds}
             </div>
             <div className="text-gray-400 text-sm">Total Rounds</div>
           </div>
 
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
-            <div className="text-3xl mb-2">🌍</div>
-            <div className="text-2xl font-bold text-cyan-400 mb-1">
-              {globalStats.totalParticipants.toLocaleString()}
-            </div>
-            <div className="text-gray-400 text-sm">Total Participants</div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
             <div className="text-3xl mb-2">💎</div>
             <div className="text-2xl font-bold text-pink-400 mb-1">
-              {globalStats.totalPrizePool.toLocaleString()}
+              {snapshot.accumulatedPrizePool?.toLocaleString()}
             </div>
-            <div className="text-gray-400 text-sm">Total STRK Distributed</div>
+            <div className="text-gray-400 text-sm">Accumulated Pool</div>
           </div>
         </div>
 
