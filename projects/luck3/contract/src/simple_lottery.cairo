@@ -120,11 +120,14 @@ mod SimpleLottery {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, strk_token_address: ContractAddress, fee_address: ContractAddress,
+        ref self: ContractState,
+        owner: ContractAddress,
+        strk_token_address: ContractAddress,
+        fee_address: ContractAddress,
     ) {
         self.strk_token.write(strk_token_address);
         self.fee_address.write(fee_address);
-        self.owner.write(get_caller_address());
+        self.owner.write(owner);
         self.current_round_id.write(0);
     }
 
