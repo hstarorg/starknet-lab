@@ -1,1 +1,1 @@
-pub mod lottery;
+pub mod simple_lottery;
