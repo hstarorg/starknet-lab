@@ -70,8 +70,10 @@ fn setup_user(
     stop_cheat_caller_address(strk_dispatcher.contract_address);
 }
 
-fn get_current_round_info(lottery_dispatcher: ISimpleLotteryDispatcher) -> (u64, u64, u256, u64, u8, bool) {
-    let current_round_id = lottery_dispatcher.get_current_round_id();
+fn get_current_round_info(
+    lottery_dispatcher: ISimpleLotteryDispatcher,
+) -> (u64, u64, u256, u64, u8, bool) {
+    let (_, current_round_id, _) = lottery_dispatcher.get_info();
     lottery_dispatcher.get_round_info(current_round_id)
 }
 
@@ -93,13 +95,17 @@ fn get_round_winning_number(lottery_dispatcher: ISimpleLotteryDispatcher, round_
 }
 
 // Helper function to get user reward from ticket info
-fn get_user_reward(lottery_dispatcher: ISimpleLotteryDispatcher, user: ContractAddress, round_id: u64) -> u256 {
+fn get_user_reward(
+    lottery_dispatcher: ISimpleLotteryDispatcher, user: ContractAddress, round_id: u64,
+) -> u256 {
     let (_, _, reward, _) = lottery_dispatcher.get_user_ticket(user, round_id);
     reward
 }
 
 // Helper function to get user ticket info
-fn get_user_tickets(lottery_dispatcher: ISimpleLotteryDispatcher, user: ContractAddress, round_id: u64) -> (u8, bool) {
+fn get_user_tickets(
+    lottery_dispatcher: ISimpleLotteryDispatcher, user: ContractAddress, round_id: u64,
+) -> (u8, bool) {
     let (guess, is_winner, _, _) = lottery_dispatcher.get_user_ticket(user, round_id);
     (guess, is_winner)
 }
@@ -141,7 +147,7 @@ fn test_create_round() {
     stop_cheat_caller_address(lottery_address);
 
     // Verify new round was created
-    let current_round_id = lottery_dispatcher.get_current_round_id();
+    let (_, current_round_id, _) = lottery_dispatcher.get_info();
     assert(current_round_id == 2, 'Wrong current round');
 
     let (round_id, _, _, _, _, _) = lottery_dispatcher.get_round_info(2);
@@ -219,10 +225,9 @@ fn test_claim_reward() {
 fn test_get_current_round_id() {
     let (lottery_dispatcher, _, _, _, _, _) = setup_test();
 
-    let current_round_id = lottery_dispatcher.get_current_round_id();
+    let (_, current_round_id, _) = lottery_dispatcher.get_info();
     assert(current_round_id == 1, 'Initial round should be 1');
 }
-
 
 
 #[test]
@@ -251,7 +256,9 @@ fn test_buy_ticket_multiple_users() {
     stop_cheat_caller_address(lottery_address);
 
     // Verify round info updated
-    let (round_id, end_time, prize_pool, total_tickets, winning_number, is_drawn) = lottery_dispatcher.get_round_info(1);
+    let (round_id, _, prize_pool, total_tickets, _, is_drawn) =
+        lottery_dispatcher
+        .get_round_info(1);
     assert(round_id == 1, 'Wrong round ID');
     assert(prize_pool == 3000000000000000000, 'Wrong prize pool');
     assert(total_tickets == 3, 'Wrong ticket count');
@@ -373,14 +380,6 @@ fn test_claim_reward_success() {
 }
 
 #[test]
-fn test_get_accumulated_prize_pool() {
-    let (lottery_dispatcher, _, _, _, _, _) = setup_test();
-
-    let accumulated = lottery_dispatcher.get_accumulated_prize_pool();
-    assert(accumulated == 0, 'Wrong accumulated');
-}
-
-#[test]
 fn test_round_info_non_existent() {
     let (lottery_dispatcher, _, _, _, _, _) = setup_test();
 
@@ -395,4 +394,15 @@ fn test_user_ticket_non_existent() {
     let user: ContractAddress = 0x111.try_into().unwrap();
     let (guess, _, _, _) = lottery_dispatcher.get_user_ticket(user, 1);
     assert(guess == 0, 'Wrong guess');
+}
+
+#[test]
+fn test_get_info() {
+    let (lottery_dispatcher, _, _, _, _, _) = setup_test();
+
+    let (owner, current_round_id, accumulated_prize_pool) = lottery_dispatcher.get_info();
+
+    assert(owner == test_address(), 'Wrong owner');
+    assert(current_round_id == 1, 'Wrong current round id');
+    assert(accumulated_prize_pool == 0, 'Wrong accumulated prize pool');
 }

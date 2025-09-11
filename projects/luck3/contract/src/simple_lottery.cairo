@@ -16,8 +16,7 @@ pub trait ISimpleLottery<TContractState> {
     fn get_user_ticket(
         self: @TContractState, user: ContractAddress, round_id: u64,
     ) -> (u8, bool, u256, bool);
-    fn get_current_round_id(self: @TContractState) -> u64;
-    fn get_accumulated_prize_pool(self: @TContractState) -> u256;
+    fn get_info(self: @TContractState) -> (ContractAddress, u64, u256);
 }
 
 #[starknet::contract]
@@ -120,7 +119,9 @@ mod SimpleLottery {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, strk_token_address: ContractAddress, fee_address: ContractAddress) {
+    fn constructor(
+        ref self: ContractState, strk_token_address: ContractAddress, fee_address: ContractAddress,
+    ) {
         self.strk_token.write(strk_token_address);
         self.fee_address.write(fee_address);
         self.owner.write(get_caller_address());
@@ -383,12 +384,12 @@ mod SimpleLottery {
             (ticket.guess, ticket.is_winner, ticket.reward, ticket.claimed)
         }
 
-        fn get_current_round_id(self: @ContractState) -> u64 {
-            self.current_round_id.read()
-        }
 
-        fn get_accumulated_prize_pool(self: @ContractState) -> u256 {
-            self.accumulated_prize_pool.read()
+        fn get_info(self: @ContractState) -> (ContractAddress, u64, u256) {
+            let owner = self.owner.read();
+            let current_round_id = self.current_round_id.read();
+            let accumulated_prize_pool = self.accumulated_prize_pool.read();
+            (owner, current_round_id, accumulated_prize_pool)
         }
     }
 
