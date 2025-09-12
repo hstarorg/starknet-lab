@@ -269,7 +269,10 @@ mod SimpleLottery {
             }
 
             if round.total_tickets == 0 {
-                // 无彩票，奖池滚入下一轮（这里简化处理，直接标记为开奖）
+                // 无彩票，奖池滚入下一轮
+                let current_accumulated = self.accumulated_prize_pool.read();
+                self.accumulated_prize_pool.write(current_accumulated + prize_pool_after_fee);
+
                 round.is_drawn = true;
                 self.rounds.write(round_id, round);
 
@@ -384,7 +387,9 @@ mod SimpleLottery {
             self.accumulated_prize_pool.write(current_accumulated - amount);
         }
 
-        fn get_round_info(self: @ContractState, round_id: u64) -> (u64, u64, u64, u256, u8, bool, u64) {
+        fn get_round_info(
+            self: @ContractState, round_id: u64,
+        ) -> (u64, u64, u64, u256, u8, bool, u64) {
             let round = self.rounds.read(round_id);
             if round.id == 0 {
                 return (0, 0, 0, 0, 0, false, 0);
