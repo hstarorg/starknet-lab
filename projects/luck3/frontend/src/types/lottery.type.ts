@@ -8,6 +8,11 @@ export interface LotteryRound {
   isDrawn: boolean;
 }
 
+export interface LotteryRoundDetail extends LotteryRound {
+  userTicket?: UserTicket | null;
+  roundStatus?: any;
+}
+
 export interface UserTicket {
   roundId: number;
   guess: number;

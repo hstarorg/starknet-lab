@@ -25,7 +25,6 @@ export function Lottery() {
   useEffect(() => {
     if (account?.address && currentRound?.id) {
       store.fetchUserTicket();
-      store.fetchRecentRounds();
     }
   }, [store, account?.address, currentRound?.id]);
 
@@ -87,10 +86,7 @@ export function Lottery() {
           )}
         </div>
         <div className="flex-1">
-          <RecentLottery
-            recentRoundsLoading={snapshot.recentRoundsLoading}
-            recentRounds={snapshot.recentRounds}
-          />
+          <RecentLottery recentRoundIds={snapshot.recentRoundIds} />
         </div>
       </div>
     </div>

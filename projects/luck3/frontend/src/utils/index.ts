@@ -1,8 +1,8 @@
 import { formatDate as _formatDate } from 'date-fns';
 
 const datePresetMap: Record<string, string> = {
-  date: 'YYYY-MM-DD',
-  datetime: 'YYYY-MM-DD HH:mm:ss',
+  date: 'yyyy-mm-dd',
+  datetime: 'yyyy-mm-dd HH:mm:ss',
 };
 export function formatDate(
   date: Date,

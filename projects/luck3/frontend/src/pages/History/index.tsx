@@ -12,32 +12,13 @@ import {
 } from '@mantine/core';
 import { TicketIcon } from '@heroicons/react/24/outline';
 import { RoundDetail } from '@/pages/components/round-detail';
-import { useAccount } from '@starknet-react/core';
-import { useEffect } from 'react';
 
 export function History() {
   const { store, snapshot } = useStore(HistoryStore);
-  const { address, account } = useAccount();
 
-  const { rounds, loading, hasMore } = snapshot;
+  const { roundIds, loading } = snapshot;
 
-  // Set account when it changes
-  useEffect(() => {
-    if (account) {
-      store.setAccount(account);
-    }
-  }, [store, account]);
-
-  // Load initial data when component mounts or address changes
-  useEffect(() => {
-    if (address && rounds.length === 0) {
-      store.loadMoreRounds(address);
-    }
-  }, [store, address, rounds.length]);
-
-  const handleClaimReward = (roundId: number) => {
-    store.claimReward(roundId);
-  };
+  const hasMore = roundIds[roundIds.length - 1] > 1;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -56,9 +37,9 @@ export function History() {
           </Group>
         </Card.Section>
         <Card.Section p="md">
-          <LoadingOverlay visible={loading && rounds.length === 0} />
+          <LoadingOverlay visible={loading && roundIds.length === 0} />
           <Stack gap="md">
-            {rounds.length === 0 && !loading ? (
+            {roundIds.length === 0 && !loading ? (
               <Box py="xl" ta="center">
                 <TicketIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                 <Text c="dimmed" size="sm">
@@ -66,21 +47,20 @@ export function History() {
                 </Text>
               </Box>
             ) : (
-              rounds.map((round) => (
+              roundIds.map((roundId) => (
                 <RoundDetail
-                  key={round.roundId.toString()}
-                  round={round}
+                  key={roundId}
+                  roundId={roundId}
                   showActions={true}
-                  onClaimReward={handleClaimReward}
                 />
               ))
             )}
           </Stack>
 
-          {hasMore && rounds.length > 0 && (
+          {hasMore && roundIds.length > 0 && (
             <Box ta="center" mt="md">
               <Button
-                onClick={() => store.loadMoreRounds(address)}
+                onClick={store.loadMoreRounds}
                 loading={loading}
                 variant="light"
                 color="blue"
@@ -91,7 +71,7 @@ export function History() {
             </Box>
           )}
 
-          {!hasMore && rounds.length > 0 && (
+          {!hasMore && roundIds.length > 0 && (
             <Box ta="center" mt="md">
               <Text c="dimmed" size="sm">
                 No more rounds to load

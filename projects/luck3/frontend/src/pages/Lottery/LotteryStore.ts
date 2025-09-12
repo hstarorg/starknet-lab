@@ -14,8 +14,7 @@ type ViewModel = {
 
   purchaseLoading?: boolean;
 
-  recentRounds: RecentRoundInfo[];
-  recentRoundsLoading?: boolean;
+  recentRoundIds: number[];
 };
 
 export interface RecentRoundInfo {
@@ -32,7 +31,7 @@ export class LotteryStore {
   private readonly AUTO_REFRESH_INTERVAL = 30000; // 30 seconds
 
   state = proxy<ViewModel>({
-    recentRounds: [],
+    recentRoundIds: [],
   });
 
   onMounted() {
@@ -44,6 +43,13 @@ export class LotteryStore {
     try {
       const roundInfo = await lotteryService.getCurrentRoundInfo();
       this.state.currentRound = roundInfo;
+      if (roundInfo) {
+        const recentRoundIds = [];
+        for (let maxId = roundInfo.id - 1; maxId > 0; maxId--) {
+          recentRoundIds.push(maxId);
+        }
+        this.state.recentRoundIds = recentRoundIds;
+      }
     } finally {
       this.state.loading = false;
     }
@@ -78,7 +84,6 @@ export class LotteryStore {
           if (this.state.currentRound) {
             await this.fetchUserTicket();
             // Also refresh recent rounds data
-            await this.fetchRecentRounds();
           }
         }
       } catch (error) {
@@ -113,60 +118,6 @@ export class LotteryStore {
     } finally {
       this.state.userTicketLoading = false;
       this.state.userTicketChecked = true;
-    }
-  }
-
-  async fetchRecentRounds() {
-    if (!this.account?.address) return;
-
-    this.state.recentRoundsLoading = true;
-    try {
-      const recentRounds: RecentRoundInfo[] = [];
-
-      // Get current round info first
-      const currentRound = await lotteryService.getCurrentRoundInfo();
-
-      // Prepare round IDs for batch query (current - 1, current - 2)
-      const roundIds: number[] = [];
-      for (let i = 1; i <= 2; i++) {
-        const roundId = currentRound!.id - i;
-        if (roundId > 0n) {
-          roundIds.push(roundId);
-        }
-      }
-
-      if (roundIds.length === 0) {
-        this.state.recentRounds = [];
-        return;
-      }
-
-      // Get rounds info individually
-      const roundsPromises = roundIds.map(id => lotteryService.getRoundInfo(id));
-      const roundsInfo = await Promise.all(roundsPromises);
-
-      // Get user tickets for these rounds
-      const userTicketsPromises = roundIds.map(id =>
-        lotteryService.getUserTicket(this.account!.address, id)
-      );
-      const userTickets = await Promise.all(userTicketsPromises);
-
-      // Build recent rounds data
-      roundsInfo.forEach((roundInfo, index) => {
-        if (!roundInfo) return;
-
-        const userTicket = userTickets[index];
-        recentRounds.push({
-          roundId: BigInt(roundInfo.id),
-          endTime: BigInt(roundInfo.endTime),
-          prizePool: BigInt(roundInfo.prizePool),
-          winningNumber: roundInfo.winningNumber || undefined,
-          userTicket,
-        });
-      });
-
-      this.state.recentRounds = recentRounds;
-    } finally {
-      this.state.recentRoundsLoading = false;
     }
   }
 

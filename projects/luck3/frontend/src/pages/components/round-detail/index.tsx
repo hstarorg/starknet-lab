@@ -1,74 +1,45 @@
-import {
-  Card,
-  Group,
-  Text,
-  Stack,
-  Badge,
-  Box,
-  Button,
-} from '@mantine/core';
+import { Card, Group, Text, Stack, Badge, Box, Button } from '@mantine/core';
 import {
   TrophyIcon,
   ClockIcon,
   CurrencyDollarIcon,
   TicketIcon,
 } from '@heroicons/react/24/outline';
-import { formatSTRK } from '@/utils';
-import type { UserTicket } from '@/types/lottery.type';
-
-export interface RoundDetailData {
-  roundId: bigint;
-  endTime: bigint;
-  prizePool: bigint;
-  totalTickets?: bigint;
-  winningNumber?: number;
-  userTicket?: UserTicket | null;
-}
+import { formatDate } from '@/utils';
+import { RoundDetailStore } from './RoundDetailStore';
+import { useStore } from '@/hooks';
+import { useEffect } from 'react';
+import { useAccount } from '@starknet-react/core';
 
 interface RoundDetailProps {
-  round: RoundDetailData;
+  roundId: number;
   showActions?: boolean;
-  onClaimReward?: (roundId: number) => void;
   compact?: boolean;
 }
 
 export function RoundDetail({
-  round,
+  roundId,
   showActions = false,
-  onClaimReward,
   compact = false,
 }: RoundDetailProps) {
-  const formatDate = (timestamp: bigint) => {
-    const date = new Date(Number(timestamp) * 1000);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const { store, snapshot } = useStore(RoundDetailStore);
+  const { address } = useAccount();
 
-  const getRoundStatus = (round: RoundDetailData) => {
-    if (round.winningNumber) {
-      return { status: 'completed', color: 'green', text: 'Completed' };
+  useEffect(() => {
+    if (roundId) {
+      store.loadRoundInfo(roundId, address);
     }
-    const now = Date.now() / 1000;
-    const endTime = Number(round.endTime);
-    if (now > endTime) {
-      // Check if round has participants
-      const hasParticipants = round.totalTickets
-        ? round.totalTickets > 0n
-        : round.prizePool > 0n;
-      if (hasParticipants) {
-        return { status: 'drawing', color: 'orange', text: 'Drawing' };
-      } else {
-        return { status: 'expired', color: 'gray', text: 'Expired' };
-      }
-    }
-    return { status: 'active', color: 'blue', text: 'Active' };
-  };
+  }, [store, roundId, address]);
 
-  const roundStatus = getRoundStatus(round);
+  const round = snapshot.round;
+
+  if (!round) {
+    return null;
+  }
+
+  const roundStatus = round.roundStatus;
+
+  console.log('Round Detail:', round);
 
   return (
     <Card
@@ -82,15 +53,11 @@ export function RoundDetail({
           <Group gap="xs">
             <TrophyIcon className="h-4 w-4 text-gray-600" />
             <Text size="sm" fw={600}>
-              Round #{round.roundId.toString()}
+              Round #{round.id}
             </Text>
           </Group>
-          <Badge
-            size="xs"
-            color={roundStatus.color}
-            variant="filled"
-          >
-            {roundStatus.text}
+          <Badge size="xs" color={roundStatus?.color} variant="filled">
+            {roundStatus?.text}
           </Badge>
         </Group>
 
@@ -100,7 +67,7 @@ export function RoundDetail({
             <ClockIcon className="h-3 w-3 text-gray-500" />
             <Text size="xs" c="dimmed">
               {round.endTime > 0n
-                ? formatDate(round.endTime)
+                ? formatDate(new Date(round.endTime * 1000), 'date')
                 : 'Date not available'}
             </Text>
           </Group>
@@ -138,10 +105,10 @@ export function RoundDetail({
             </Text>
           </Group>
           <Stack gap="xs" align="end">
-            {round.prizePool > 0n ? (
+            {Number(round.prizePool) > 0 ? (
               <>
                 <Text size="sm" fw={600} c="green">
-                  {formatSTRK(round.prizePool)}
+                  {round.prizePool}
                 </Text>
                 {round.userTicket && (
                   <Text size="xs" c="dimmed">
@@ -237,7 +204,7 @@ export function RoundDetail({
                   size="xs"
                   variant="filled"
                   color="green"
-                  onClick={() => onClaimReward?.(Number(round.roundId))}
+                  // onClick={() => onClaimReward?.(Number(round.roundId))}
                 >
                   Claim Reward
                 </Button>
