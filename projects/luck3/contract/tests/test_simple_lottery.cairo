@@ -44,13 +44,7 @@ fn setup_test() -> (
     lottery_dispatcher.create_round(ROUND_DURATION_SECONDS);
     stop_cheat_caller_address(lottery_address);
 
-    (
-        lottery_dispatcher,
-        lottery_address,
-        mock_dispatcher,
-        strk_dispatcher,
-        mockerc20_address,
-    )
+    (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address)
 }
 
 fn setup_user(
@@ -116,7 +110,8 @@ fn get_user_tickets(
 
 #[test]
 fn test_buy_ticket_valid() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user with tokens
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -175,7 +170,8 @@ fn test_create_round() {
 
 #[test]
 fn test_draw_winner() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user with tokens
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -211,7 +207,8 @@ fn test_draw_winner() {
 
 #[test]
 fn test_claim_reward() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user with tokens
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -260,7 +257,8 @@ fn test_get_current_round_id() {
 
 #[test]
 fn test_buy_ticket_multiple_users() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     let user1: ContractAddress = 0x111.try_into().unwrap();
     let user2: ContractAddress = 0x222.try_into().unwrap();
@@ -329,7 +327,8 @@ fn test_buy_ticket_multiple_users() {
 
 #[test]
 fn test_draw_winner_with_winners() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup users
     let user1: ContractAddress = 0x111.try_into().unwrap();
@@ -394,7 +393,8 @@ fn test_draw_winner_with_winners() {
 
 #[test]
 fn test_claim_reward_success() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -466,7 +466,8 @@ fn test_get_info() {
 
 #[test]
 fn test_withdraw_accumulated_prize_pool_success() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user with tokens
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -510,7 +511,8 @@ fn test_withdraw_accumulated_prize_pool_success() {
 #[test]
 #[should_panic(expected: ('Insufficient funds',))]
 fn test_withdraw_accumulated_prize_pool_insufficient_funds() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user with tokens
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -559,7 +561,8 @@ fn test_withdraw_accumulated_prize_pool_not_owner() {
 
 #[test]
 fn test_withdraw_accumulated_prize_pool_zero_amount() {
-    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) = setup_test();
+    let (lottery_dispatcher, lottery_address, mock_dispatcher, strk_dispatcher, mockerc20_address) =
+        setup_test();
 
     // Setup user with tokens
     let user: ContractAddress = 0x111.try_into().unwrap();
@@ -600,7 +603,7 @@ fn test_withdraw_accumulated_prize_pool_zero_amount() {
 }
 
 #[test]
-#[should_panic(expected: ('Previous round not drawn yet',))]
+#[should_panic(expected: ('Current round not drawn yet',))]
 fn test_create_round_requires_previous_drawn() {
     // Deploy mock ERC20 token
     let mockerc20_class = declare("MockERC20");
