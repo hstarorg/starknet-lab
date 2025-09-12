@@ -12,6 +12,5 @@ export const AppConf = {
     minGuess: 10,
     maxGuess: 99,
     ticketCost: BigInt('1000000000000000000'), // 1 STRK in wei
-    dayInSeconds: 86400,
   } as const,
 };

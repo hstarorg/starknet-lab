@@ -16,7 +16,7 @@ export function Home() {
   const currentRound = snapshot.currentRound;
 
   return (
-    <div className="relative min-h-[calc(100vh-200px)] ">
+    <div className="relative min-h-[calc(100vh-200px)]">
       {/* 丰富的背景装饰系统 */}
       <div className="absolute inset-0 overflow-hidden">
         {/* 大型装饰圆 */}
@@ -79,7 +79,7 @@ export function Home() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
               STRK
             </span>{' '}
-            Every Day!
+            Every Round!
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -87,7 +87,7 @@ export function Home() {
             <strong className="text-white">
               {LOTTERY_CONFIG.minGuess}-{LOTTERY_CONFIG.maxGuess}
             </strong>{' '}
-            and share in the daily prize pool.
+            and share in the prize pool.
             <br />
             <span className="text-green-400 font-semibold">
               Only 1 STRK per ticket!
@@ -125,7 +125,7 @@ export function Home() {
               <h3 className="text-2xl font-bold text-white mb-4">
                 Loading Lottery Data
               </h3>
-              <p className="text-gray-400">
+              <p className="text-gray-300">
                 Please wait while we fetch the latest information...
               </p>
             </div>
@@ -137,7 +137,7 @@ export function Home() {
               <h2 className="text-3xl font-bold text-white mb-2">
                 Live Statistics
               </h2>
-              <p className="text-gray-400">
+              <p className="text-gray-300">
                 Current round information updated in real-time
               </p>
             </div>
@@ -182,11 +182,11 @@ export function Home() {
               <h3 className="text-2xl font-bold text-white mb-4">
                 No Active Lottery Round
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-300 mb-6">
                 There is currently no active lottery round. Please wait for the
                 next round to begin.
               </p>
-              <div className="text-sm text-gray-300">
+              <div className="text-sm text-gray-400">
                 New rounds are typically created automatically. Check back soon!
               </div>
             </div>
@@ -198,7 +198,7 @@ export function Home() {
           <h2 className="text-3xl font-bold text-white mb-2">
             Statistics Information
           </h2>
-          <p className="text-gray-400">
+          <p className="text-gray-300">
             Current and accumulated prize pool statistics
           </p>
         </div>
@@ -225,11 +225,11 @@ export function Home() {
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 text-center border border-white/10 hover:bg-white/10 transition-all duration-300">
             <div className="text-4xl mb-4">🎲</div>
             <h3 className="text-xl font-bold text-white mb-3">
-              Daily Fair Draw
+              Fair Random Draw
             </h3>
-            <p className="text-gray-400 leading-relaxed">
-              Every day at midnight, winners are selected automatically using
-              blockchain randomness. No manipulation, completely fair.
+            <p className="text-gray-300 leading-relaxed">
+              Winners are selected automatically using blockchain randomness.
+              No manipulation, completely fair and transparent.
             </p>
           </div>
 
@@ -238,7 +238,7 @@ export function Home() {
             <h3 className="text-xl font-bold text-white mb-3">
               Secure & Transparent
             </h3>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-gray-300 leading-relaxed">
               Built on Starknet with Cairo smart contracts. Every transaction is
               verifiable on the blockchain. Your funds are always safe.
             </p>
@@ -249,7 +249,7 @@ export function Home() {
             <h3 className="text-xl font-bold text-white mb-3">
               Instant Rewards
             </h3>
-            <p className="text-gray-400 leading-relaxed">
+            <p className="text-gray-300 leading-relaxed">
               Winners can claim their STRK rewards immediately after the draw.
               No waiting periods, instant payouts to your wallet.
             </p>
@@ -269,7 +269,7 @@ export function Home() {
               <h4 className="text-lg font-semibold text-white mb-2">
                 Connect Wallet
               </h4>
-              <p className="text-gray-400">
+              <p className="text-gray-300">
                 Connect your Starknet wallet to participate
               </p>
             </div>
@@ -280,7 +280,7 @@ export function Home() {
               <h4 className="text-lg font-semibold text-white mb-2">
                 Buy Ticket
               </h4>
-              <p className="text-gray-400">
+              <p className="text-gray-300">
                 Choose a number {LOTTERY_CONFIG.minGuess}-
                 {LOTTERY_CONFIG.maxGuess} and pay 1 STRK
               </p>
@@ -292,7 +292,7 @@ export function Home() {
               <h4 className="text-lg font-semibold text-white mb-2">
                 Win & Claim
               </h4>
-              <p className="text-gray-400">
+              <p className="text-gray-300">
                 If you guess right, claim your share of the prize pool
               </p>
             </div>

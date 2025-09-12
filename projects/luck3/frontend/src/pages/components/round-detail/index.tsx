@@ -111,11 +111,6 @@ export function RoundDetail({
                 <Text size="sm" fw={600} c="green">
                   {round.prizePool}
                 </Text>
-                {round.userTicket && (
-                  <Text size="xs" c="dimmed">
-                    Your contribution
-                  </Text>
-                )}
               </>
             ) : (
               <Text size="xs" c="dimmed">

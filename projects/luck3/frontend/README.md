@@ -5,7 +5,7 @@ This directory contains the React frontend application for the Luck3 lottery dAp
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+
 - pnpm package manager
 
 ### Installation
@@ -50,11 +50,13 @@ frontend/
 │   │   └── RootLayout.tsx  # Main app layout with navigation
 │   ├── pages/              # Page components
 │   │   ├── Home/          # Landing page
-│   │   └── Lottery/       # Lottery gameplay page
+│   │   ├── Lottery/       # Lottery gameplay page
+│   │   ├── History/       # Lottery history page
+│   │   └── components/    # Shared page components
+│   │       └── round-detail/ # Round detail component
 │   ├── lib/               # Contract clients and utilities
 │   │   ├── luck3/         # Luck3 contract client
 │   │   ├── erc20/         # ERC20 token client
-│   │   └── kanabi.ts      # ABI utilities
 │   ├── providers/         # React context providers
 │   │   └── StarknetProvider.tsx
 │   ├── hooks/             # Custom React hooks
@@ -72,29 +74,50 @@ frontend/
 ### Environment Variables (.env)
 ```env
 # Starknet network configuration
-VITE_STARKNET_CHAIN=sepolia
-
-# Contract addresses
-VITE_CONTRACT_ADDRESS=0x049a6282c3337ca1f3c425acfd57c4c7cc90b85c942945746b73871538587720
-VITE_STRK_ADDRESS=0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D
-
-# Optional: Fee address
-VITE_FEE_ADDRESS=0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0
+VITE_APP_ENV=development
+VITE_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_8
+VITE_LUCK3_CONTRACT_ADDRESS=0x01ba6d03c36c0598c8b86df77c166477761adc1afc9a7f63e88736677fe390b1
 ```
 
 ### Lottery Configuration
 Key settings are defined in `src/constants/index.ts`:
 - **Number Range**: 10-99
 - **Ticket Price**: 1 STRK
-- **Round Duration**: 5 minutes
+
+## 📱 Pages & Features
+
+### Home Page
+- **Hero Section**: Eye-catching title with STRK token integration
+- **Live Statistics**: Real-time display of current round data, prize pool, tickets sold, and participants
+- **Statistics Overview**: Historical data including total rounds and accumulated prize pools
+- **Feature Showcase**: Highlighting daily fair draws, secure blockchain integration, and instant rewards
+- **How to Play**: Step-by-step guide with interactive numbered circles
+
+### Lottery Page
+- **Current Round Display**: Shows active lottery details with countdown timer
+- **Ticket Purchase**: Interactive form for buying lottery tickets
+- **User Tickets**: Display of purchased tickets with winner status
+- **Recent Rounds**: Quick view of past lottery results
+
+### History Page
+- **Round Grid**: Responsive grid layout showing historical lottery rounds
+- **Equal Height Cards**: All round detail cards maintain consistent height
+- **Detailed Information**: Each card shows round number, date, winning number, prize pool, and user participation
+- **Action Buttons**: Claim reward functionality for winners
+
+### Shared Components
+- **RoundDetail**: Reusable component for displaying lottery round information
+- **ConnectButton**: Wallet connection interface
+- **LoadingArea**: Consistent loading states across the application
 
 ## 🎨 UI Features
 
 - **Responsive Design**: Works on desktop and mobile devices
-- **Animated Backgrounds**: Dynamic particle effects and gradients
+- **Animated Backgrounds**: Dynamic particle effects and gradients with warm color themes
 - **Real-time Updates**: Live lottery statistics and countdown timers
 - **Wallet Integration**: Seamless connection with Starknet wallets
-- **Modern UI**: Glassmorphism effects with backdrop blur
+- **Modern UI**: Glassmorphism effects with backdrop blur and orange-themed design
+- **Gamified Experience**: Interactive hover effects, smooth animations, and engaging visuals
 - **Accessibility**: Proper ARIA labels and keyboard navigation
 
 ## 🔧 Development Scripts
