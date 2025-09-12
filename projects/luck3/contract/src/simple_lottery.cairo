@@ -12,11 +12,14 @@ pub trait ISimpleLottery<TContractState> {
     fn draw_winner(ref self: TContractState, round_id: u64);
 
     // 查询功能
-    fn get_round_info(self: @TContractState, round_id: u64) -> (u64, u64, u256, u64, u8, bool);
+    fn get_round_info(self: @TContractState, round_id: u64) -> (u64, u64, u64, u256, u8, bool, u64);
     fn get_user_ticket(
         self: @TContractState, user: ContractAddress, round_id: u64,
     ) -> (u8, bool, u256, bool);
     fn get_info(self: @TContractState) -> (ContractAddress, u64, u256);
+
+    // 管理员功能
+    fn withdraw_accumulated_prize_pool(ref self: TContractState, amount: u256);
 }
 
 #[starknet::contract]
@@ -365,18 +368,35 @@ mod SimpleLottery {
                 );
         }
 
-        fn get_round_info(self: @ContractState, round_id: u64) -> (u64, u64, u256, u64, u8, bool) {
+        fn withdraw_accumulated_prize_pool(ref self: ContractState, amount: u256) {
+            // 只有所有者可以提取累积奖金池
+            assert(get_caller_address() == self.owner.read(), 'Only owner can withdraw');
+
+            let current_accumulated = self.accumulated_prize_pool.read();
+            assert(amount <= current_accumulated, 'Insufficient funds');
+
+            // 转账给所有者
+            let strk_dispatcher = IERC20Dispatcher { contract_address: self.strk_token.read() };
+            let owner_address = self.owner.read();
+            strk_dispatcher.transfer(owner_address, amount);
+
+            // 更新累积奖金池
+            self.accumulated_prize_pool.write(current_accumulated - amount);
+        }
+
+        fn get_round_info(self: @ContractState, round_id: u64) -> (u64, u64, u64, u256, u8, bool, u64) {
             let round = self.rounds.read(round_id);
             if round.id == 0 {
-                return (0, 0, 0, 0, 0, false);
+                return (0, 0, 0, 0, 0, false, 0);
             }
             (
                 round.id,
+                round.start_time,
                 round.end_time,
                 round.prize_pool,
-                round.total_tickets,
                 round.winning_number,
                 round.is_drawn,
+                round.total_tickets,
             )
         }
 
