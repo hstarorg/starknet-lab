@@ -126,6 +126,16 @@ class LotteryService {
   ): Promise<string> {
     return await this._contractClient.drawWinner(account, roundId);
   }
+
+  /**
+   * Withdraw accumulated prize pool funds (admin only)
+   */
+  async withdrawAccumulatedPrizePool(
+    amount: bigint,
+    account: AccountInterface
+  ): Promise<string> {
+    return await this._contractClient.withdrawAccumulatedPrizePool(account, amount);
+  }
 }
 
 export const lotteryService = new LotteryService();

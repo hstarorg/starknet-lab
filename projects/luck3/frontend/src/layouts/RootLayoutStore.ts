@@ -6,13 +6,14 @@ import { proxy } from 'valtio';
 type ViewModel = {
   adminModalOpen?: boolean;
   owner?: string;
-  adminAction?: 'create' | 'draw' | null;
+  adminAction?: 'create' | 'draw' | 'withdraw' | null;
   isProcessing?: boolean;
   durationSeconds: number;
   roundId?: number;
+  withdrawAmount: number;
 };
 export class RootLayoutStore {
-  state = proxy<ViewModel>({ durationSeconds: 86400 });
+  state = proxy<ViewModel>({ durationSeconds: 86400, withdrawAmount: 0 });
   private _intervalId: NodeJS.Timeout | null = null;
   constructor() {
     this._intervalId = setInterval(() => {
@@ -40,7 +41,7 @@ export class RootLayoutStore {
     this.state.adminModalOpen = open;
   };
 
-  setAdminAction = (action: 'create' | 'draw' | null) => {
+  setAdminAction = (action: 'create' | 'draw' | 'withdraw' | null) => {
     this.state.adminAction = action;
   };
 
@@ -52,10 +53,18 @@ export class RootLayoutStore {
         account as AccountInterface
       );
       this.setAdminModalVisible(false);
-      alert('Round created successfully!');
+      notifications.show({
+        title: 'Success',
+        message: 'Round created successfully!',
+        color: 'green',
+      });
     } catch (error) {
       console.error('Failed to create round:', error);
-      alert('Failed to create round. Check console for details.');
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to create round. Check console for details.',
+        color: 'red',
+      });
     } finally {
       this.state.isProcessing = false;
     }
@@ -84,10 +93,50 @@ export class RootLayoutStore {
       );
       this.setAdminModalVisible(false);
       this.state.roundId = undefined;
-      alert('Winner drawn successfully!');
+      notifications.show({
+        title: 'Success',
+        message: 'Winner drawn successfully!',
+        color: 'green',
+      });
     } catch (error) {
       console.error('Failed to draw winner:', error);
-      alert('Failed to draw winner. Check console for details.');
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to draw winner. Check console for details.',
+        color: 'red',
+      });
+    } finally {
+      this.state.isProcessing = false;
+    }
+  };
+
+  setWithdrawAmount = (value: number) => {
+    this.state.withdrawAmount = value;
+  };
+
+  handleWithdrawFunds = async (account: AccountInterface) => {
+    if (!this.state.withdrawAmount || this.state.withdrawAmount <= 0) {
+      return notifications.show({
+        title: 'Error',
+        message: 'Please enter a valid withdrawal amount.',
+      });
+    }
+    this.state.isProcessing = true;
+    try {
+      const amountInWei =
+        BigInt(String(this.state.withdrawAmount)) * BigInt(10 ** 18); // Convert to wei
+      await lotteryService.withdrawAccumulatedPrizePool(
+        amountInWei,
+        account as AccountInterface
+      );
+      this.setAdminModalVisible(false);
+      this.state.withdrawAmount = 0;
+      notifications.show({ message: 'Funds withdrawn successfully!' });
+    } catch (error) {
+      console.error('Failed to withdraw funds:', error);
+      notifications.show({
+        message: 'Failed to withdraw funds. Check console for details.',
+      });
     } finally {
       this.state.isProcessing = false;
     }

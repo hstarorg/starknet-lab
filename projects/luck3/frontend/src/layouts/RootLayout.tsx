@@ -182,6 +182,12 @@ export function RootLayout() {
                 >
                   🎯 Draw Winner
                 </button>
+                <button
+                  onClick={() => store.setAdminAction('withdraw')}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                >
+                  💰 Withdraw Funds
+                </button>
               </div>
             ) : snapshot.adminAction === 'create' ? (
               <div className="space-y-4">
@@ -216,7 +222,7 @@ export function RootLayout() {
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : snapshot.adminAction === 'draw' ? (
               <div className="space-y-4">
                 <div>
                   <label className="block text-white font-medium mb-2">
@@ -245,7 +251,40 @@ export function RootLayout() {
                   </button>
                 </div>
               </div>
-            )}
+            ) : snapshot.adminAction === 'withdraw' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-white font-medium mb-2">
+                    Withdrawal Amount (STRK)
+                  </label>
+                  <NumberInput
+                    value={snapshot.withdrawAmount}
+                    onChange={(value) =>
+                      store.setWithdrawAmount(value as number)
+                    }
+                    placeholder="Enter amount in STRK"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => store.setAdminAction(null)}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => store.handleWithdrawFunds(account!)}
+                    disabled={snapshot.isProcessing || !snapshot.withdrawAmount}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+                  >
+                    {snapshot.isProcessing
+                      ? 'Withdrawing...'
+                      : 'Withdraw Funds'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
