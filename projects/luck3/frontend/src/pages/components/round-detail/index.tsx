@@ -44,10 +44,11 @@ export function RoundDetail({
   return (
     <Card
       withBorder
-      radius="sm"
-      className="bg-gradient-to-r from-gray-50 to-white"
+      radius="lg"
+      className="bg-orange-50 hover:bg-orange-100 transition-all duration-300 hover:scale-105 hover:shadow-xl border-2 border-orange-200"
+      h="100%"
     >
-      <Stack gap="sm">
+      <Stack gap="sm" h="100%">
         {/* Round Header */}
         <Group justify="space-between" align="center">
           <Group gap="xs">
@@ -176,7 +177,7 @@ export function RoundDetail({
           <Group
             justify="space-between"
             align="center"
-            className="bg-green-50 p-2 rounded"
+            className="bg-orange-100 p-2 rounded border border-orange-200"
           >
             <Text size="xs" c="green" fw={500}>
               Your Reward:
@@ -202,8 +203,7 @@ export function RoundDetail({
               {round.userTicket?.isWinner && !round.userTicket.claimed && (
                 <Button
                   size="xs"
-                  variant="filled"
-                  color="green"
+                  className="bg-orange-500 hover:bg-orange-600 text-white border-0"
                   // onClick={() => onClaimReward?.(Number(round.roundId))}
                 >
                   Claim Reward

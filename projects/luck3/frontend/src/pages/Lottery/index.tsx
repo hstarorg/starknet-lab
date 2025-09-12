@@ -30,15 +30,17 @@ export function Lottery() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Lottery</h1>
-        <p className="text-lg text-gray-300">
-          Guess a number{' '}
-          <strong>
-            {LOTTERY_CONFIG.minGuess} - {LOTTERY_CONFIG.maxGuess}
-          </strong>{' '}
-          and win STRK tokens in our lottery!
-        </p>
+      <div className=" backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-2xl">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-white mb-2">Lottery</h1>
+          <p className="text-lg text-yellow-200">
+            Guess a number{' '}
+            <strong>
+              {LOTTERY_CONFIG.minGuess} - {LOTTERY_CONFIG.maxGuess}
+            </strong>{' '}
+            and win STRK tokens in our lottery!
+          </p>
+        </div>
       </div>
 
       <div className="flex gap-4">

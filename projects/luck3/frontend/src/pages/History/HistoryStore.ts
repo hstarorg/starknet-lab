@@ -7,7 +7,7 @@ type ViewModel = {
 };
 
 export class HistoryStore {
-  private readonly ITEMS_PER_PAGE = 10;
+  private readonly ITEMS_PER_PAGE = 2;
 
   state = proxy<ViewModel>({
     roundIds: [],
@@ -25,7 +25,8 @@ export class HistoryStore {
 
   private _getNextPageIds(id: number) {
     const ids: number[] = [];
-    for (let max = id; max > Math.max(max - this.ITEMS_PER_PAGE, 0); max--) {
+    console.log('Loading next page starting from ID:', id);
+    for (let max = id; max > Math.max(id - this.ITEMS_PER_PAGE, 0); max--) {
       ids.push(max);
     }
     return ids;
@@ -41,7 +42,7 @@ export class HistoryStore {
         maxId = currentRoundId;
       } else {
         // 分页加载
-        maxId = this.state.roundIds[this.state.roundIds.length - 1];
+        maxId = this.state.roundIds[this.state.roundIds.length - 1] - 1;
       }
 
       const ids = this._getNextPageIds(maxId);
