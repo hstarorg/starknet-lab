@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest"
   },
   "dependencies": {
     "@bizjs/biz-utils": "^0.4.1",
@@ -43,6 +44,7 @@
     "postcss-simple-vars": "^7.0.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.43.0",
-    "vite": "npm:rolldown-vite@^7.1.9"
+    "vite": "npm:rolldown-vite@^7.1.9",
+    "vitest": "^3.2.4"
   }
 }

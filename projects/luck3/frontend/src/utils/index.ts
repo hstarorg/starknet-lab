@@ -1,4 +1,5 @@
 import { formatDate as _formatDate } from 'date-fns';
+import { getChecksumAddress } from 'starknet';
 
 const datePresetMap: Record<string, string> = {
   date: 'yyyy-mm-dd',
@@ -23,4 +24,14 @@ export function randomInt(min: number, max: number): number {
 export function getUnixTimestamp(date?: Date | string | number): number {
   const d = date ? (date instanceof Date ? date : new Date(date)) : new Date();
   return Math.floor(d.valueOf() / 1000);
+}
+
+export function isSameStarknetAddress(
+  addr1: string | undefined,
+  addr2: string | undefined
+) {
+  if (!addr1 || !addr2) {
+    return false;
+  }
+  return getChecksumAddress(addr1) === getChecksumAddress(addr2);
 }

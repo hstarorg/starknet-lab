@@ -5,13 +5,13 @@ import { ConnectButton } from '../components/connect-button';
 import { useStore } from '@/hooks';
 import { RootLayoutStore } from './RootLayoutStore';
 import { NumberInput } from '@mantine/core';
+import { isSameStarknetAddress } from '@/utils';
 
 export function RootLayout() {
   const { store, snapshot } = useStore(RootLayoutStore);
   const { account } = useAccount();
 
-  const isOwner =
-    account?.address?.toLowerCase() === (snapshot.owner || '').toLowerCase();
+  const isOwner = isSameStarknetAddress(account?.address, snapshot.owner);
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-gray-800 via-black to-gray-600 overflow-hidden">
