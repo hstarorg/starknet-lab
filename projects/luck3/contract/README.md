@@ -58,7 +58,7 @@ scarb fmt
    Example:
 
    ```bash
-   starkli deploy 0x066b3ca9288ffa97fbcc5f7bb267b9e0e87ac028cfba60472547391e3de4a6cc 0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0 0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D 0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0 --network=sepolia
+   starkli deploy 0x0611ac55df5b855d8318f83bce5ca67386fbfd863a3461a713100883e1d74163 0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0 0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D 0x05B46E1237b1Ad38293e3E962cb922Cdf8CD29011D22EeAFb7A5f367363a6De0 --network=sepolia
    ```
 
 ## 🔗 Contract Interaction
@@ -72,11 +72,6 @@ starkli call <CONTRACT_ADDRESS> get_current_round_info --network=sepolia
 # Get user tickets for a specific round
 starkli call <CONTRACT_ADDRESS> get_user_tickets <USER_ADDRESS> <ROUND_ID> --network=sepolia
 
-# Get user reward for a specific round
-starkli call <CONTRACT_ADDRESS> get_user_reward <USER_ADDRESS> <ROUND_ID> --network=sepolia
-
-# Get winning number for a round
-starkli call <CONTRACT_ADDRESS> get_round_winning_number <ROUND_ID> --network=sepolia
 ```
 
 ### Write Functions
@@ -109,7 +104,7 @@ starkli class-at <CONTRACT_ADDRESS> --network=sepolia | pnpx abi-wan-kanabi --in
 Example:
 
 ```bash
-starkli class-at "0x05d9dc9ebcfb490694c17bb15a7874a22b6dc52d1214a9a15a2747d01a07b6d9" --network=sepolia | pnpx abi-wan-kanabi --input /dev/stdin --output abi.ts
+starkli class-at "0x007e18ff94d1654244e913cec63310a65b30bcde3fdd5803b48ca81135604cf2" --network=sepolia | pnpx abi-wan-kanabi --input /dev/stdin --output abi.ts
 ```
 
 ## 📋 Recent Deployments
@@ -123,6 +118,7 @@ starkli class-at "0x05d9dc9ebcfb490694c17bb15a7874a22b6dc52d1214a9a15a2747d01a07
 | 2025-09-11 23:37 | Sepolia Testnet | 0x01d3226781b0317266ca33a883c2765eeed50bbbab00ee2bc2ccedf4a3cc5d9b | 0x00e6330efe390c914bfd65925c70e830b7c7ced6c5d3566ac11f4a7954c842b0 |
 | 2025-09-12 00:52 | Sepolia Testnet | 0x054ae3f7aa35754930462ed99994ed8731c6a5077a3f8b371f116952c4743260 | 0x05d9dc9ebcfb490694c17bb15a7874a22b6dc52d1214a9a15a2747d01a07b6d9 |
 | 2025-09-12 01:13 | Sepolia Testnet | 0x066b3ca9288ffa97fbcc5f7bb267b9e0e87ac028cfba60472547391e3de4a6cc | 0x05a774d217b4f673f5a9ea4273f05c7e5711da7022bcf63d7fe446517b877cd4 |
+| 2025-09-12 12:01 | Sepolia Testnet | 0x0611ac55df5b855d8318f83bce5ca67386fbfd863a3461a713100883e1d74163 | 0x007e18ff94d1654244e913cec63310a65b30bcde3fdd5803b48ca81135604cf2 |
 
 ## 🏗️ Contract Architecture
 

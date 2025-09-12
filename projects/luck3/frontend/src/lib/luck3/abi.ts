@@ -99,7 +99,7 @@ export const ABI = [
         ],
         "outputs": [
           {
-            "type": "(core::integer::u64, core::integer::u64, core::integer::u256, core::integer::u64, core::integer::u8, core::bool)"
+            "type": "(core::integer::u64, core::integer::u64, core::integer::u64, core::integer::u256, core::integer::u8, core::bool, core::integer::u64)"
           }
         ],
         "state_mutability": "view"
@@ -134,6 +134,18 @@ export const ABI = [
           }
         ],
         "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "withdraw_accumulated_prize_pool",
+        "inputs": [
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
       }
     ]
   },
@@ -141,6 +153,10 @@ export const ABI = [
     "type": "constructor",
     "name": "constructor",
     "inputs": [
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
       {
         "name": "strk_token_address",
         "type": "core::starknet::contract_address::ContractAddress"

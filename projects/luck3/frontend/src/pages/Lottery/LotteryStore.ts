@@ -140,23 +140,25 @@ export class LotteryStore {
         return;
       }
 
-      // Use contract batch method to get rounds info
-      const roundsInfo = await lotteryService.getRoundsInfoBatch(roundIds);
+      // Get rounds info individually
+      const roundsPromises = roundIds.map(id => lotteryService.getRoundInfo(id));
+      const roundsInfo = await Promise.all(roundsPromises);
 
       // Get user tickets for these rounds
-      const userTickets = await lotteryService.getUserTicketsBatch(
-        this.account.address,
-        roundIds
+      const userTicketsPromises = roundIds.map(id =>
+        lotteryService.getUserTicket(this.account!.address, id)
       );
+      const userTickets = await Promise.all(userTicketsPromises);
 
       // Build recent rounds data
       roundsInfo.forEach((roundInfo, index) => {
-        const userTicket = userTickets[index];
+        if (!roundInfo) return;
 
+        const userTicket = userTickets[index];
         recentRounds.push({
-          roundId: roundInfo.roundId,
-          endTime: roundInfo.endTime,
-          prizePool: roundInfo.prizePool,
+          roundId: BigInt(roundInfo.id),
+          endTime: BigInt(roundInfo.endTime),
+          prizePool: BigInt(roundInfo.prizePool),
           winningNumber: roundInfo.winningNumber || undefined,
           userTicket,
         });

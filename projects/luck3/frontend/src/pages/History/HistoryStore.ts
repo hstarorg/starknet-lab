@@ -76,24 +76,30 @@ export class HistoryStore {
         return;
       }
 
-      // Use batch query to get rounds info
-      const roundsInfo = await lotteryService.getRoundsInfoBatch(roundIds);
+      // Get rounds info individually
+      const roundsPromises = roundIds.map(id => lotteryService.getRoundInfo(id));
+      const roundsInfo = await Promise.all(roundsPromises);
 
       // Get user tickets for these rounds
-      const userTickets = await lotteryService.getUserTicketsBatch(
-        userAddress || '',
-        roundIds
+      const userTicketsPromises = roundIds.map(id =>
+        lotteryService.getUserTicket(userAddress || '', id)
       );
+      const userTickets = await Promise.all(userTicketsPromises);
 
       // Build history rounds data
-      const newRounds: HistoryRound[] = roundsInfo.map((roundInfo, index) => ({
-        roundId: roundInfo.roundId,
-        endTime: roundInfo.endTime,
-        prizePool: roundInfo.prizePool,
-        totalTickets: roundInfo.totalTickets,
-        winningNumber: roundInfo.winningNumber || undefined,
-        userTicket: userTickets[index],
-      }));
+      const newRounds: HistoryRound[] = [];
+      roundsInfo.forEach((roundInfo, index) => {
+        if (!roundInfo) return;
+
+        newRounds.push({
+          roundId: BigInt(roundInfo.id),
+          endTime: BigInt(roundInfo.endTime),
+          prizePool: BigInt(roundInfo.prizePool),
+          totalTickets: BigInt(roundInfo.totalTickets),
+          winningNumber: roundInfo.winningNumber || undefined,
+          userTicket: userTickets[index],
+        });
+      });
 
       // Update state
       this.state.rounds.push(...newRounds);
@@ -111,6 +117,15 @@ export class HistoryStore {
   }
 
   async claimReward(roundId: number) {
-    lotteryService.claimReward(roundId, this.account as AccountInterface);
+    try {
+      const txHash = await lotteryService.claimReward(roundId, this.account as AccountInterface);
+      if (txHash) {
+        // Refresh the rounds data after claiming reward
+        await this.loadMoreRounds(this.account?.address || '');
+      }
+    } catch (error) {
+      console.error('Failed to claim reward:', error);
+      throw error;
+    }
   }
 }

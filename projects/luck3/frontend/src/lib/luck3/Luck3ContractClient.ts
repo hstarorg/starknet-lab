@@ -1,12 +1,12 @@
-import type { AccountInterface } from 'starknet';
+import type { AccountInterface, Call } from 'starknet';
+import { CallData, cairo, getChecksumAddress } from 'starknet';
 import { ContractClientBase } from '../ContractClientBase';
 import { ABI } from './abi';
 import { ERC20ContractClient } from '../erc20/ERC20ContractClient';
-import type { Call } from 'starknet';
-import { CallData, cairo, getChecksumAddress } from 'starknet';
 
 export interface RoundInfo {
   id: bigint;
+  startTime: bigint;
   endTime: bigint;
   prizePool: bigint;
   totalTickets: bigint;
@@ -15,7 +15,7 @@ export interface RoundInfo {
 }
 
 export interface UserTicket {
-  guess: number;
+  guess: bigint;
   isWinner: boolean;
   reward: bigint;
   claimed: boolean;
@@ -25,7 +25,7 @@ export interface UserTicket {
 export const TICKET_COST = 1000000000000000000n; // 1 STRK in wei
 export const MIN_GUESS = 10;
 export const MAX_GUESS = 99;
-const STRK_TOKEN_ADDRESS =
+export const STRK_TOKEN_ADDRESS =
   '0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d';
 export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
   private rpcUrl?: string;
@@ -54,17 +54,26 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
 
   async getRoundInfo(roundId: number): Promise<RoundInfo> {
     const result = await this.contract.get_round_info(roundId);
-    const [id, endTime, prizePool, totalTickets, winningNumber, isDrawn] =
-      Object.values(result) as [
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        boolean
-      ];
+    const [
+      id,
+      startTime,
+      endTime,
+      prizePool,
+      winningNumber,
+      isDrawn,
+      totalTickets,
+    ] = Object.values(result) as [
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      boolean,
+      bigint
+    ];
     return {
       id,
+      startTime,
       endTime,
       prizePool,
       totalTickets,
@@ -79,7 +88,7 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
   ): Promise<UserTicket> {
     const result = await this.contract.get_user_ticket(userAddress, roundId);
     const [guess, isWinner, reward, claimed] = Object.values(result) as [
-      number,
+      bigint,
       boolean,
       bigint,
       boolean
@@ -90,11 +99,6 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
       reward,
       claimed,
     };
-  }
-
-  async getRoundsInfo(roundIds: number[]): Promise<RoundInfo[]> {
-    const promises = roundIds.map((id) => this.getRoundInfo(id));
-    return await Promise.all(promises);
   }
 
   // External functions (require account)
@@ -168,6 +172,15 @@ export class Luck3ContractClient extends ContractClientBase<typeof ABI> {
   ): Promise<string> {
     this.contract.connect(account);
     const tx = await this.contract.draw_winner(roundId);
+    return (tx as any).transaction_hash;
+  }
+
+  async withdrawAccumulatedPrizePool(
+    account: AccountInterface,
+    amount: bigint
+  ): Promise<string> {
+    this.contract.connect(account);
+    const tx = await this.contract.withdraw_accumulated_prize_pool(amount);
     return (tx as any).transaction_hash;
   }
 }

@@ -38,12 +38,16 @@ export class HomeStore {
       this.state.currentRound = round;
       this.state.accumulatedPrizePool = info.accumulatedPrizePool;
       if (round) {
-        this.state.timeRemaining = formatDistanceToNow(
-          new Date(Number(round.endTime) * 1000),
-          {
+        const endDate = new Date(Number(round.endTime) * 1000);
+        const now = new Date();
+
+        if (endDate > now) {
+          this.state.timeRemaining = formatDistanceToNow(endDate, {
             addSuffix: true,
-          }
-        );
+          });
+        } else {
+          this.state.timeRemaining = 'Ended';
+        }
       }
     } catch (error) {
       console.error('Failed to load home data:', error);

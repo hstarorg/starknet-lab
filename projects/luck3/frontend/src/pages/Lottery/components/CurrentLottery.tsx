@@ -32,7 +32,7 @@ export function CurrentLottery({
       if (endDate > now) {
         setCountdown(formatDistanceToNow(endDate, { addSuffix: true }));
       } else {
-        setCountdown('Round ended');
+        setCountdown('Ended');
       }
     };
 
@@ -49,6 +49,23 @@ export function CurrentLottery({
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-20 bg-gray-200 rounded"></div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Check if there's no current lottery
+  if (!roundId || roundId === 0) {
+    return (
+      <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg shadow-lg p-6 text-white">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <ClockIcon className="h-12 w-12 text-purple-200" />
+          </div>
+          <div className="text-2xl font-bold mb-2">No Active Lottery</div>
+          <div className="text-purple-200 text-sm">
+            Please wait for the next lottery round to start
+          </div>
         </div>
       </div>
     );
