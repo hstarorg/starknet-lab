@@ -2,6 +2,7 @@ import { lotteryService } from '@/services/lottery.service';
 import { notifications } from '@mantine/notifications';
 import type { AccountInterface } from 'starknet';
 import { proxy } from 'valtio';
+import { numberMul } from '@bizjs/biz-utils';
 
 type ViewModel = {
   adminModalOpen?: boolean;
@@ -123,8 +124,9 @@ export class RootLayoutStore {
     }
     this.state.isProcessing = true;
     try {
-      const amountInWei =
-        BigInt(String(this.state.withdrawAmount)) * BigInt(10 ** 18); // Convert to wei
+      const amountInWei = BigInt(
+        numberMul(this.state.withdrawAmount, 10 ** 18)
+      ); // Convert to wei
       await lotteryService.withdrawAccumulatedPrizePool(
         amountInWei,
         account as AccountInterface

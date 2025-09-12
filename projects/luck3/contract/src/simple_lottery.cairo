@@ -215,7 +215,13 @@ mod SimpleLottery {
             assert(get_caller_address() == self.owner.read(), 'Only owner can create round');
 
             let current_time = get_block_timestamp();
-            let new_round_id = self.current_round_id.read() + 1;
+            let current_round_id = self.current_round_id.read();
+            if current_round_id > 0 {
+                let current_round = self.rounds.read(current_round_id);
+                assert(current_round.is_drawn, 'Current round not drawn yet');
+            }
+
+            let new_round_id = current_round_id + 1;
 
             // 获取累积奖金并加入新轮次
             let accumulated_prize = self.accumulated_prize_pool.read();

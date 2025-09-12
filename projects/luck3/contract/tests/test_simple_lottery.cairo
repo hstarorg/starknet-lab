@@ -151,8 +151,15 @@ fn test_buy_ticket_valid() {
 fn test_create_round() {
     let (lottery_dispatcher, lottery_address, _, _, _) = setup_test();
 
-    // Create a new round
+    // Advance time past round end and draw winner for round 1
+    let (_, _, end_time, _, _, _, _) = lottery_dispatcher.get_round_info(1);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
+
     start_cheat_caller_address(lottery_address, test_address());
+    lottery_dispatcher.draw_winner(1);
+    stop_cheat_caller_address(lottery_address);
+
+    // Now create a new round
     lottery_dispatcher.create_round(600); // 10 minutes
     stop_cheat_caller_address(lottery_address);
 
@@ -162,6 +169,8 @@ fn test_create_round() {
 
     let (round_id, _, _, _, _, _, _) = lottery_dispatcher.get_round_info(2);
     assert(round_id == 2, 'Round 2 not found');
+
+    stop_cheat_block_timestamp(lottery_address);
 }
 
 #[test]
@@ -586,6 +595,87 @@ fn test_withdraw_accumulated_prize_pool_zero_amount() {
     // Check accumulated prize pool after withdrawal (should remain the same)
     let (_, _, accumulated_after) = lottery_dispatcher.get_info();
     assert(accumulated_after == accumulated_before, 'Zero withdrawal unchanged');
+
+    stop_cheat_block_timestamp(lottery_address);
+}
+
+#[test]
+#[should_panic(expected: ('Previous round not drawn yet',))]
+fn test_create_round_requires_previous_drawn() {
+    // Deploy mock ERC20 token
+    let mockerc20_class = declare("MockERC20");
+    let mockerc20_class = mockerc20_class.unwrap().contract_class();
+    let (mockerc20_address, _) = mockerc20_class.deploy(@array![test_address().into()]).unwrap();
+
+    // Deploy lottery contract
+    let lottery_class = declare("SimpleLottery");
+    let lottery_class = lottery_class.unwrap().contract_class();
+    let fee_address: ContractAddress = 0x456.try_into().unwrap();
+    let owner_address = test_address();
+    let calldata = array![owner_address.into(), mockerc20_address.into(), fee_address.into()];
+    let (lottery_address, _) = lottery_class.deploy(@calldata).unwrap();
+
+    let lottery_dispatcher = ISimpleLotteryDispatcher { contract_address: lottery_address };
+
+    // Create first round (should succeed - no previous round to check)
+    start_cheat_caller_address(lottery_address, test_address());
+    lottery_dispatcher.create_round(ROUND_DURATION_SECONDS);
+    stop_cheat_caller_address(lottery_address);
+
+    // Verify first round was created
+    let (_, current_round_id, _) = lottery_dispatcher.get_info();
+    assert(current_round_id == 1, 'First round should be 1');
+
+    // Try to create second round without drawing the first round (should panic)
+    lottery_dispatcher.create_round(ROUND_DURATION_SECONDS);
+}
+
+#[test]
+fn test_create_round_after_previous_drawn() {
+    // Deploy mock ERC20 token
+    let mockerc20_class = declare("MockERC20");
+    let mockerc20_class = mockerc20_class.unwrap().contract_class();
+    let (mockerc20_address, _) = mockerc20_class.deploy(@array![test_address().into()]).unwrap();
+
+    // Deploy lottery contract
+    let lottery_class = declare("SimpleLottery");
+    let lottery_class = lottery_class.unwrap().contract_class();
+    let fee_address: ContractAddress = 0x456.try_into().unwrap();
+    let owner_address = test_address();
+    let calldata = array![owner_address.into(), mockerc20_address.into(), fee_address.into()];
+    let (lottery_address, _) = lottery_class.deploy(@calldata).unwrap();
+
+    let lottery_dispatcher = ISimpleLotteryDispatcher { contract_address: lottery_address };
+
+    // Create first round
+    start_cheat_caller_address(lottery_address, test_address());
+    lottery_dispatcher.create_round(ROUND_DURATION_SECONDS);
+    stop_cheat_caller_address(lottery_address);
+
+    // Verify first round was created
+    let (_, current_round_id, _) = lottery_dispatcher.get_info();
+    assert(current_round_id == 1, 'First round should be 1');
+
+    // Advance time past round end
+    let (_, _, end_time, _, _, _, _) = lottery_dispatcher.get_round_info(1);
+    start_cheat_block_timestamp(lottery_address, end_time + 1);
+
+    // Draw winner for first round
+    lottery_dispatcher.draw_winner(1);
+
+    // Verify first round was drawn
+    let (_, _, _, _, _, is_drawn, _) = lottery_dispatcher.get_round_info(1);
+    assert(is_drawn, 'First round should be drawn');
+
+    // Now create second round (should succeed)
+    lottery_dispatcher.create_round(ROUND_DURATION_SECONDS);
+
+    // Verify second round was created
+    let (_, current_round_id_after, _) = lottery_dispatcher.get_info();
+    assert(current_round_id_after == 2, 'Second round should be 2');
+
+    let (round_id, _, _, _, _, _, _) = lottery_dispatcher.get_round_info(2);
+    assert(round_id == 2, 'Round 2 should exist');
 
     stop_cheat_block_timestamp(lottery_address);
 }
