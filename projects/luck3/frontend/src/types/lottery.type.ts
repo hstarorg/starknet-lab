@@ -1,6 +1,6 @@
 export interface LotteryRound {
   id: number;
-  // startTime: number;
+  startTime: number;
   endTime: number;
   prizePool: string;
   winningNumber: number;

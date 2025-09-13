@@ -43,7 +43,7 @@ export function History() {
                 key={roundId}
                 h="100%"
               >
-                <RoundDetail roundId={roundId} showActions={true} />
+                <RoundDetail roundId={roundId} />
               </Grid.Col>
             ))
           )}

@@ -68,9 +68,9 @@ class LotteryService {
     if (round.id !== BigInt(roundId)) {
       return null;
     }
-
     return {
       id: Number(round.id),
+      startTime: Number(round.startTime),
       endTime: Number(round.endTime),
       prizePool: formatSTRK(round.prizePool),
       winningNumber: Number(round.winningNumber),
@@ -134,7 +134,10 @@ class LotteryService {
     amount: bigint,
     account: AccountInterface
   ): Promise<string> {
-    return await this._contractClient.withdrawAccumulatedPrizePool(account, amount);
+    return await this._contractClient.withdrawAccumulatedPrizePool(
+      account,
+      amount
+    );
   }
 }
 

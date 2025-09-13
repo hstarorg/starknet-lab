@@ -13,17 +13,12 @@ import { useAccount } from '@starknet-react/core';
 
 interface RoundDetailProps {
   roundId: number;
-  showActions?: boolean;
   compact?: boolean;
 }
 
-export function RoundDetail({
-  roundId,
-  showActions = false,
-  compact = false,
-}: RoundDetailProps) {
+export function RoundDetail({ roundId, compact = false }: RoundDetailProps) {
   const { store, snapshot } = useStore(RoundDetailStore);
-  const { address } = useAccount();
+  const { account, address } = useAccount();
 
   useEffect(() => {
     if (roundId) {
@@ -39,7 +34,8 @@ export function RoundDetail({
 
   const roundStatus = round.roundStatus;
 
-  console.log('Round Detail:', round);
+  const userTicket = round.userTicket;
+  const showActions = userTicket?.isWinner && !userTicket?.claimed;
 
   return (
     <Card
@@ -67,9 +63,13 @@ export function RoundDetail({
           <Group gap="xs">
             <ClockIcon className="h-3 w-3 text-gray-500" />
             <Text size="xs" c="dimmed">
-              {round.endTime > 0n
-                ? formatDate(new Date(round.endTime * 1000), 'date')
-                : 'Date not available'}
+              {round.startTime > 0
+                ? formatDate(new Date(round.startTime * 1000), 'datetime')
+                : ''}
+              -{' '}
+              {round.endTime > 0
+                ? formatDate(new Date(round.endTime * 1000), 'datetime')
+                : ''}
             </Text>
           </Group>
         </Group>
@@ -109,7 +109,7 @@ export function RoundDetail({
             {Number(round.prizePool) > 0 ? (
               <>
                 <Text size="sm" fw={600} c="green">
-                  {round.prizePool}
+                  {round.prizePool} STRK
                 </Text>
               </>
             ) : (
@@ -168,24 +168,38 @@ export function RoundDetail({
         </Group>
 
         {/* Reward Info */}
-        {round.userTicket?.isWinner && !round.userTicket.claimed && (
-          <Group
-            justify="space-between"
-            align="center"
-            className="bg-orange-100 p-2 rounded border border-orange-200"
-          >
-            <Text size="xs" c="green" fw={500}>
-              Your Reward:
-            </Text>
-            <Badge
-              size="sm"
-              color="green"
-              variant="filled"
-              leftSection={<CurrencyDollarIcon className="h-3 w-3" />}
-            >
-              {round.userTicket.reward}
-            </Badge>
-          </Group>
+        {round.userTicket?.isWinner && (
+          <>
+            {!round.userTicket.claimed ? (
+              <Group
+                justify="space-between"
+                align="center"
+                className="bg-orange-100 p-2 rounded border border-orange-200"
+              >
+                <Text size="xs" c="green" fw={500}>
+                  Your Reward:
+                </Text>
+                <Badge
+                  size="sm"
+                  color="green"
+                  variant="filled"
+                  leftSection={<CurrencyDollarIcon className="h-3 w-3" />}
+                >
+                  {round.userTicket.reward}
+                </Badge>
+              </Group>
+            ) : (
+              <Group
+                justify="center"
+                align="center"
+                className="bg-green-100 p-2 rounded border border-green-200"
+              >
+                <Text size="xs" c="green" fw={500}>
+                  Claimed
+                </Text>
+              </Group>
+            )}
+          </>
         )}
 
         {/* Action Buttons */}
@@ -199,7 +213,7 @@ export function RoundDetail({
                 <Button
                   size="xs"
                   className="bg-orange-500 hover:bg-orange-600 text-white border-0"
-                  // onClick={() => onClaimReward?.(Number(round.roundId))}
+                  onClick={() => store.handleClaimReward(round.id, account!)}
                 >
                   Claim Reward
                 </Button>

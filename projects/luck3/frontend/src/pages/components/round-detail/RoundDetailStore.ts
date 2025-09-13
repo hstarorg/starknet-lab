@@ -2,6 +2,8 @@ import { proxy } from 'valtio';
 import { lotteryService } from '@/services/lottery.service';
 import type { LotteryRoundDetail } from '@/types/lottery.type';
 import { getUnixTimestamp } from '@/utils';
+import { notifications } from '@mantine/notifications';
+import type { AccountInterface } from 'starknet';
 
 type ViewModel = {
   round?: LotteryRoundDetail;
@@ -52,6 +54,26 @@ export class RoundDetailStore {
       }
     }
     return { status: 'active', color: 'blue', text: 'Active' };
+  };
+
+  handleClaimReward = async (roundId: number, account: AccountInterface) => {
+    try {
+      const txHash = await lotteryService.claimReward(roundId, account);
+      if (txHash) {
+        notifications.show({
+          message: 'Reward claimed successfully!',
+          color: 'green',
+        });
+        // 领取奖励后刷新用户彩票状态
+        await this.loadRoundInfo(roundId, account.address);
+      }
+    } catch (error) {
+      notifications.show({
+        message: 'Failed to claim reward. Please try again.',
+        color: 'red',
+      });
+      console.error('Claim reward error:', error);
+    }
   };
 
   onUnMounted() {
