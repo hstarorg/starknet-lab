@@ -2,8 +2,8 @@ import { formatDate as _formatDate } from 'date-fns';
 import { getChecksumAddress } from 'starknet';
 
 const datePresetMap: Record<string, string> = {
-  date: 'yyyy-mm-dd',
-  datetime: 'yyyy-mm-dd HH:mm:ss',
+  date: 'yyyy-MM-dd',
+  datetime: 'yyyy-MM-dd HH:mm:ss',
 };
 export function formatDate(
   date: Date,
